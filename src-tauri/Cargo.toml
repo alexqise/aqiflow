@@ -1,0 +1,24 @@
+[package]
+name = "aqiflow"
+version = "0.1.0"
+description = "A native, local-first task + calendar planner"
+edition = "2021"
+
+[lib]
+name = "aqiflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "macos-private-api", "image-png"] }
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

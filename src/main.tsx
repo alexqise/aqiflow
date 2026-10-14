@@ -13,6 +13,7 @@ function QuickRoot() {
 
 async function boot() {
   if (!isTauri) document.body.classList.add("browser");
+  if (import.meta.env.DEV) (window as unknown as { __aq: typeof useStore }).__aq = useStore;
   const label = await windowLabel();
   await useStore.getState().load({ seed: label === "main" });
   ReactDOM.createRoot(document.getElementById("root")!).render(

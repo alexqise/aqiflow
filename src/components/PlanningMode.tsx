@@ -95,11 +95,11 @@ export function PlanningMode() {
   );
 }
 
-function ActionRow({ task, children }: { task: Task; children: ReactNode }) {
+function ActionRow({ task, children, showDate = true }: { task: Task; children: ReactNode; showDate?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <TaskRow task={task} />
+        <TaskRow task={task} showDate={showDate} />
       </div>
       <div style={{ display: "flex", gap: 2 }}>{children}</div>
     </div>
@@ -220,7 +220,7 @@ function ChooseStep({ todays, planned, capacity }: { todays: Task[]; planned: nu
         </div>
         <div className="list-scroll">
           {todays.map((t) => (
-            <ActionRow key={t.id} task={t}>
+            <ActionRow key={t.id} task={t} showDate={false}>
               <button className="icon-btn" title="Remove from today" onClick={() => scheduleFor(t, "none")}>
                 <X size={14} />
               </button>

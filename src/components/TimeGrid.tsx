@@ -20,6 +20,8 @@ import { taskMenu } from "../actions";
 
 const SNAP = 15;
 const snap = (m: number) => Math.max(0, Math.min(24 * 60, Math.round(m / SNAP) * SNAP));
+/** Snaps to the slot the pointer is inside (used for drops and click-to-create). */
+const slot = (m: number) => Math.max(0, Math.min(24 * 60 - SNAP, Math.floor((m + 0.5) / SNAP) * SNAP));
 
 interface Item {
   key: string;
@@ -81,7 +83,6 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [ix, setIx] = useState<Interaction | null>(null);
   const ixRef = useRef<Interaction | null>(null);
-  ixRef.current = ix;
   const [dropPreview, setDropPreview] = useState<{ day: string; start: number; duration: number } | null>(null);
   const [now, setNow] = useState(() => new Date());
   const today = todayStr();
@@ -140,9 +141,14 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
     return best;
   };
 
-  // Global pointer tracking while an interaction is active.
-  useEffect(() => {
-    if (!ix) return;
+  const update = (next: Interaction | null) => {
+    ixRef.current = next;
+    setIx(next);
+  };
+
+  // Starts a pointer gesture; listeners are attached synchronously so fast drags aren't lost.
+  const begin = (first: Interaction) => {
+    update(first);
     const move = (e: PointerEvent) => {
       const cur = ixRef.current;
       if (!cur) return;
@@ -151,33 +157,30 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
         const m = snap(minuteAt(e.clientY, di));
         const start = Math.min(cur.anchor, m);
         const end = Math.max(cur.anchor + (m === cur.anchor ? SNAP : 0), m);
-        setIx({ ...cur, start, end: Math.max(end, start + SNAP), moved: true });
+        update({ ...cur, start, end: Math.max(end, start + SNAP), moved: true });
       } else if (cur.mode === "move") {
         if (!cur.moved && Math.hypot(e.clientX - cur.x0, e.clientY - cur.y0) < 4) return;
         const ci = colAt(e.clientX);
         const len = cur.item.end - cur.item.start;
-        const start = Math.min(24 * 60 - len, snap(minuteAt(e.clientY, ci) - cur.grabOffset));
-        setIx({ ...cur, day: days[ci], start, end: start + len, moved: true });
+        const start = Math.max(0, Math.min(24 * 60 - len, snap(minuteAt(e.clientY, ci) - cur.grabOffset)));
+        update({ ...cur, day: days[ci], start, end: start + len, moved: true });
       } else if (cur.mode === "resize") {
         const di = days.indexOf(cur.day);
         const end = Math.max(cur.start + SNAP, snap(minuteAt(e.clientY, di)));
-        setIx({ ...cur, end, moved: true });
+        update({ ...cur, end, moved: true });
       }
     };
-    const up = () => {
-      const cur = ixRef.current;
-      setIx(null);
-      if (!cur) return;
-      commit(cur);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up, { once: true });
-    return () => {
+    const up = (e: PointerEvent) => {
+      if (ixRef.current?.mode !== "create") move(e);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      const cur = ixRef.current;
+      update(null);
+      if (cur) commit(cur);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ix?.mode]);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   const commit = (cur: Interaction) => {
     const s = useStore.getState();
@@ -266,15 +269,15 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
                 className={`cal-col ${day === today && days.length > 1 ? "today" : ""}`}
                 onPointerDown={(e) => {
                   if (e.button !== 0 || e.target !== e.currentTarget) return;
-                  const m = snap(minuteAt(e.clientY, di) - SNAP / 2);
-                  setIx({ mode: "create", day, anchor: m, start: m, end: m + SNAP, moved: false });
+                  const m = slot(minuteAt(e.clientY, di));
+                  begin({ mode: "create", day, anchor: m, start: m, end: m + SNAP, moved: false });
                 }}
                 onDragOver={(e) => {
                   if (!isTaskDrag(e)) return;
                   e.preventDefault();
                   const t = useStore.getState().tasks.find((x) => x.id === dragState.taskId);
                   const duration = t?.duration || Number(settings.defaultDuration) || 30;
-                  const start = Math.min(24 * 60 - duration, snap(minuteAt(e.clientY, di) - SNAP / 2));
+                  const start = Math.min(24 * 60 - duration, slot(minuteAt(e.clientY, di)));
                   if (dropPreview?.day !== day || dropPreview.start !== start) setDropPreview({ day, start, duration });
                 }}
                 onDragLeave={(e) => {
@@ -311,9 +314,9 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
                       onPointerDown={(e, resize) => {
                         if (e.button !== 0) return;
                         e.stopPropagation();
-                        if (resize) setIx({ mode: "resize", item: it, day, start: it.start, end: it.end, moved: false });
+                        if (resize) begin({ mode: "resize", item: it, day, start: it.start, end: it.end, moved: false });
                         else
-                          setIx({
+                          begin({
                             mode: "move",
                             item: it,
                             day,

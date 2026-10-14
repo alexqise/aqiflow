@@ -1,4 +1,4 @@
-import { addDays, longDate, relativeDay, todayStr } from "./dates";
+import { addDays, longDate, relativeDay, todayStr, weekdayName } from "./dates";
 import type { Project, Tag, Task, View } from "./types";
 
 export interface Section {
@@ -71,10 +71,11 @@ export function sectionsFor(view: View, tasks: Task[], showCompletedToday: boole
       const out: Section[] = [];
       for (let i = 1; i <= 14; i++) {
         const d = addDays(today, i);
+        const rel = relativeDay(d);
         out.push({
           id: d,
-          title: relativeDay(d),
-          subtitle: longDate(d),
+          title: rel === "Today" || rel === "Tomorrow" ? rel : weekdayName(d),
+          subtitle: longDate(d).split(", ")[1],
           tasks: sortTasks(tasks.filter((t) => !t.done && t.date === d)),
           dropPatch: { date: d, start: null },
         });

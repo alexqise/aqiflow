@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CalendarRange,
   CheckCircle2,
+  Gauge,
   Hash,
   Inbox,
   Keyboard,
@@ -84,6 +85,7 @@ export function Sidebar() {
         <NavItem view={{ kind: "calendar" }} icon={<CalendarDays size={16} />} label="Calendar" />
         <NavItem view={{ kind: "someday" }} icon={<Archive size={16} />} label="Someday" count={countFor({ kind: "someday" }, tasks)} drop={{ someday: true, date: null, start: null }} />
         <NavItem view={{ kind: "done" }} icon={<CheckCircle2 size={16} />} label="Done" />
+        <NavItem view={{ kind: "ratings" }} icon={<Gauge size={16} />} label="Day ratings" />
 
         <div className="nav-section">
           <div className="nav-section-head">

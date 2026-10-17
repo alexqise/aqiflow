@@ -70,6 +70,7 @@ export type View =
   | { kind: "someday" }
   | { kind: "done" }
   | { kind: "calendar" }
+  | { kind: "ratings" }
   | { kind: "project"; id: string }
   | { kind: "tag"; id: string };
 

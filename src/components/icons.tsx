@@ -27,6 +27,7 @@ import {
   Search,
   Timer,
   Zap,
+  Gauge,
 } from "lucide-react";
 
 export const ICONS: Record<string, LucideIcon> = {
@@ -57,6 +58,7 @@ export const ICONS: Record<string, LucideIcon> = {
   timer: Timer,
   go: ArrowRight,
   quick: Zap,
+  rating: Gauge,
 };
 
 export function MenuIcon({ name, size = 15 }: { name?: string; size?: number }) {

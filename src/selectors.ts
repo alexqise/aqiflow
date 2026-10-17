@@ -41,6 +41,8 @@ export function viewTitle(view: View, projects: Project[], tags: Tag[]): string 
       return "Done";
     case "calendar":
       return "Calendar";
+    case "ratings":
+      return "Day ratings";
     case "project":
       return projects.find((p) => p.id === view.id)?.name ?? "Project";
     case "tag":
@@ -114,6 +116,7 @@ export function sectionsFor(view: View, tasks: Task[], showCompletedToday: boole
     }
 
     case "calendar":
+    case "ratings":
       return [];
   }
 }

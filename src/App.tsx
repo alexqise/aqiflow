@@ -8,6 +8,7 @@ import { EventEditor } from "./components/EventEditor";
 import { fmtClock, focusElapsed, FocusMode } from "./components/FocusMode";
 import { ListView } from "./components/ListView";
 import { PlanningMode } from "./components/PlanningMode";
+import { RatingsView } from "./components/RatingsView";
 import { ContextMenu, ShortcutsHelp, Toast } from "./components/Popups";
 import { QuickAddModal } from "./components/QuickAdd";
 import { SettingsModal } from "./components/Settings";
@@ -39,6 +40,7 @@ const VIEW_KEYS: Record<string, View> = {
   t: { kind: "today" },
   u: { kind: "upcoming" },
   c: { kind: "calendar" },
+  r: { kind: "ratings" },
   s: { kind: "someday" },
   d: { kind: "done" },
 };
@@ -49,6 +51,7 @@ const NUMBERED_VIEWS: View[] = [
   { kind: "calendar" },
   { kind: "someday" },
   { kind: "done" },
+  { kind: "ratings" },
 ];
 
 function isTyping(e: KeyboardEvent) {
@@ -109,7 +112,7 @@ function useKeyboard() {
         e.preventDefault();
         return s.set({ quickAdd: { open: true } });
       }
-      if (mod && /^[1-6]$/.test(e.key)) {
+      if (mod && /^[1-7]$/.test(e.key)) {
         e.preventDefault();
         return s.setView(NUMBERED_VIEWS[Number(e.key) - 1]);
       }
@@ -278,13 +281,13 @@ export function App() {
   }, []);
 
   if (!loaded) return null;
-  const showPanel = rightPanel && view.kind !== "calendar";
+  const showPanel = rightPanel && view.kind !== "calendar" && view.kind !== "ratings";
 
   return (
     <>
       <div className="app" style={showPanel ? undefined : { gridTemplateColumns: "var(--sidebar-w) minmax(0, 1fr)" }}>
         <Sidebar />
-        {view.kind === "calendar" ? <CalendarView /> : <ListView />}
+        {view.kind === "calendar" ? <CalendarView /> : view.kind === "ratings" ? <RatingsView /> : <ListView />}
         {showPanel && <RightPanel />}
       </div>
       {o.planning && <PlanningMode />}

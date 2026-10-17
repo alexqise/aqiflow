@@ -77,6 +77,7 @@ export function CommandBar() {
       { id: "nav-cal", group: "Navigate", label: "Go to Calendar", icon: "calendar", shortcut: "G C", run: go({ kind: "calendar" }) },
       { id: "nav-someday", group: "Navigate", label: "Go to Someday", icon: "someday", shortcut: "G S", run: go({ kind: "someday" }) },
       { id: "nav-done", group: "Navigate", label: "Go to Done", icon: "done", shortcut: "G D", run: go({ kind: "done" }) },
+      { id: "nav-ratings", group: "Navigate", label: "Go to Day ratings", icon: "rating", shortcut: "G R", keywords: "mood score year pixels", run: go({ kind: "ratings" }) },
       ...projects.map((p) => ({ id: "p-" + p.id, group: "Navigate", label: p.name, hint: "Project", icon: "project", color: p.color, run: go({ kind: "project", id: p.id }) })),
       ...tags.map((t) => ({ id: "tg-" + t.id, group: "Navigate", label: "#" + t.name, hint: "Tag", icon: "tag", color: t.color, run: go({ kind: "tag", id: t.id }) })),
       { id: "panel", group: "App", label: "Toggle calendar panel", icon: "panel", shortcut: "⌘\\", run: () => s.set({ rightPanel: !s.rightPanel }) },

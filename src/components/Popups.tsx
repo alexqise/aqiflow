@@ -126,8 +126,9 @@ const SHORTCUTS: [string, [string, string][]][] = [
       ["Calendar", "G C"],
       ["Someday", "G S"],
       ["Done", "G D"],
+      ["Day ratings", "G R"],
       ["Move selection", "J K"],
-      ["Views 1–6", "mod 1"],
+      ["Views 1–7", "mod 1"],
     ],
   ],
   [

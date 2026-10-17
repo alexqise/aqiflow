@@ -20,6 +20,7 @@ A native macOS task + calendar planner in the spirit of Akiflow, built with **Ru
 - Task details: notes, subtasks, priority (incl. *goal of the day*), duration estimates, recurring tasks, tags, projects
 - Drag tasks onto sidebar items to reschedule / move them, drag to reorder lists
 - Undo for completes and deletes (⌘Z), right-click context menus everywhere
+- **Day ratings**: score each day 0.0–10.0, color-graded red → green; a *Day ratings* view shows the whole year as colored squares with monthly averages, best/toughest days, streak, 30-day trend and a score histogram
 - Light / dark / system theme, macOS vibrancy sidebar, overlay title bar
 - JSON export / import
 
@@ -32,7 +33,7 @@ A native macOS task + calendar planner in the spirit of Akiflow, built with **Ru
 | ⇧⌘Space | Global quick add |
 | ⇧⌘P | Plan your day |
 | ⌘\\ | Toggle calendar panel |
-| G then I/T/U/C/S/D | Go to Inbox/Today/Upcoming/Calendar/Someday/Done |
+| G then I/T/U/C/S/D/R | Go to Inbox/Today/Upcoming/Calendar/Someday/Done/Day ratings |
 | J / K | Move selection |
 | ↵ | Open task |
 | E | Complete |

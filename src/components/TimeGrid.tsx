@@ -16,6 +16,7 @@ import { plannedMinutes } from "../selectors";
 import { PALETTE, uid, useStore } from "../store";
 import type { CalEvent, Task } from "../types";
 import { Checkbox } from "./common";
+import { RatingBadge } from "./DayRater";
 import { taskMenu } from "../actions";
 
 const SNAP = 15;
@@ -233,6 +234,7 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
               <div key={d} className={`cal-day-head ${d === today ? "today" : ""}`}>
                 {weekdayName(d, true)}
                 <span className="num">{parseLocal(d).getDate()}</span>
+                <RatingBadge date={d} />
                 <span className="load" title={`${formatDuration(load) || "0m"} planned`}>
                   <i className={load > goal ? "over" : ""} style={{ width: `${Math.min(100, (load / goal) * 100)}%` }} />
                 </span>

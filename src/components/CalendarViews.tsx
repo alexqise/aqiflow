@@ -3,6 +3,7 @@ import { addDays, longDate, monthName, parseLocal, relativeDay, startOfWeek, tod
 import { inboxTasks, sortTasks } from "../selectors";
 import { PALETTE, uid, useStore } from "../store";
 import type { CalendarMode } from "../types";
+import { DayRater } from "./DayRater";
 import { TaskRow } from "./TaskRow";
 import { TimeGrid } from "./TimeGrid";
 
@@ -21,6 +22,7 @@ export function RightPanel() {
           {date === today || relativeDay(date).length > 7 ? longDate(date).split(", ")[1] : longDate(date)}
         </span>
         <div className="grow" data-tauri-drag-region />
+        <DayRater date={date} compact />
         {date !== today && (
           <button className="btn ghost" style={{ height: 26, padding: "0 8px" }} onClick={() => set({ panelDate: today })}>
             Today

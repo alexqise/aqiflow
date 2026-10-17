@@ -7,6 +7,7 @@ import { defaultsFor, plannedMinutes, sectionsFor, viewTitle, type Section } fro
 import { useStore } from "../store";
 import type { Task, View } from "../types";
 import { Composer } from "./Composer";
+import { DayRater } from "./DayRater";
 import { TaskRow } from "./TaskRow";
 
 export function ListView() {
@@ -36,6 +37,7 @@ export function ListView() {
           {sub}
         </span>
         <div className="grow" data-tauri-drag-region />
+        {view.kind === "today" && <DayRater date={today} />}
         {view.kind === "today" && planned > 0 && (
           <span className="chip time" title="Estimated time planned for today">
             {formatDuration(planned)} planned

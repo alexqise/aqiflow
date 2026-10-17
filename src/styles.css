@@ -1963,3 +1963,86 @@ kbd {
   display: flex;
   gap: 3px;
 }
+
+/* ------------------------------------------------------------- day rater */
+
+.day-rater {
+  --rate-h: 250;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: var(--bg-hover);
+  color: var(--text-3);
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  cursor: text;
+}
+.day-rater:focus-within {
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+.day-rater input {
+  width: 30px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+  color: inherit;
+}
+.day-rater input::placeholder {
+  color: var(--text-4);
+}
+.day-rater-label {
+  font-weight: 550;
+}
+.day-rater-max {
+  opacity: 0.6;
+  font-weight: 500;
+}
+.day-rater.rated {
+  background: hsl(var(--rate-h) 80% 50% / 0.15);
+  color: hsl(var(--rate-h) 72% 36%);
+}
+.day-rater.rated:focus-within {
+  box-shadow: 0 0 0 1.5px hsl(var(--rate-h) 72% 45%);
+}
+.day-rater.invalid {
+  box-shadow: 0 0 0 1.5px var(--danger) !important;
+}
+.day-rater.compact {
+  height: 24px;
+  padding: 0 6px;
+}
+.day-rater.compact input {
+  width: 26px;
+  font-size: 12.5px;
+}
+
+.rating-badge {
+  display: inline-grid;
+  place-items: center;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 5px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 2px;
+  background: hsl(var(--rate-h) 80% 50% / 0.16);
+  color: hsl(var(--rate-h) 72% 36%);
+}
+
+:root[data-theme="dark"] .day-rater.rated,
+:root[data-theme="dark"] .rating-badge {
+  background: hsl(var(--rate-h) 70% 50% / 0.2);
+  color: hsl(var(--rate-h) 75% 64%);
+}

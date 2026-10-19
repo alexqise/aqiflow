@@ -5,7 +5,8 @@ import { CalendarView, RightPanel } from "./components/CalendarViews";
 import { CommandBar } from "./components/CommandBar";
 import { DatePickerPopover } from "./components/DatePicker";
 import { EventEditor } from "./components/EventEditor";
-import { fmtClock, focusElapsed, FocusMode } from "./components/FocusMode";
+import { FocusMode } from "./components/FocusMode";
+import { fmtClock, focusElapsed } from "./focus";
 import { ListView } from "./components/ListView";
 import { PlanningMode } from "./components/PlanningMode";
 import { RatingsView } from "./components/RatingsView";
@@ -14,26 +15,11 @@ import { QuickAddModal } from "./components/QuickAdd";
 import { SettingsModal } from "./components/Settings";
 import { Sidebar } from "./components/Sidebar";
 import { TaskDetail } from "./components/TaskDetail";
-import { addDays, diffMinutes, minutesOfDay, setClock24, todayStr, toDateTimeStr } from "./dates";
+import { addDays, diffMinutes, minutesOfDay, todayStr, toDateTimeStr } from "./dates";
 import { shallow } from "zustand/shallow";
 import { useStore } from "./store";
+import { useTheme } from "./theme";
 import type { View } from "./types";
-
-export function useTheme() {
-  const theme = useStore((s) => s.settings.theme);
-  const clock24 = useStore((s) => s.settings.clock24);
-  setClock24(clock24 === "1");
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const dark = theme === "dark" || (theme !== "light" && mq.matches);
-      document.documentElement.dataset.theme = dark ? "dark" : "light";
-    };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, [theme]);
-}
 
 const VIEW_KEYS: Record<string, View> = {
   i: { kind: "inbox" },

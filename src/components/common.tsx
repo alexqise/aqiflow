@@ -1,5 +1,6 @@
 import { Check, Flag, Star } from "lucide-react";
 import { useState } from "react";
+import { PRIORITIES } from "../priorities";
 import type { Task } from "../types";
 
 export function Checkbox({ task, onToggle, size }: { task: Task; onToggle: () => void; size?: number }) {
@@ -22,14 +23,6 @@ export function Checkbox({ task, onToggle, size }: { task: Task; onToggle: () =>
     </button>
   );
 }
-
-export const PRIORITIES = [
-  { value: 0, label: "No priority", short: "None" },
-  { value: 3, label: "High", short: "High" },
-  { value: 2, label: "Medium", short: "Medium" },
-  { value: 1, label: "Low", short: "Low" },
-  { value: 4, label: "Goal of the day", short: "Goal" },
-];
 
 export function PriorityFlag({ priority, size = 13 }: { priority: number; size?: number }) {
   if (!priority) return null;

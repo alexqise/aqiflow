@@ -4,7 +4,8 @@ import { api, isTauri } from "../api";
 import { useStore } from "../store";
 import type { Task } from "../types";
 import { Keys } from "./common";
-import { commitParsed, Tokens, useParsed } from "./Composer";
+import { commitParsed, useParsed } from "../quickadd";
+import { Tokens } from "./Composer";
 
 function QuickForm({ defaults, onClose, autoFocusKey }: { defaults?: Partial<Task>; onClose: (created: Task | null) => void; autoFocusKey?: number }) {
   const [text, setText] = useState(defaults?.title ?? "");

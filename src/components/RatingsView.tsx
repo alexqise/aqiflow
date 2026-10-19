@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { addDays, longDate, monthName, todayStr, weekdayName, parseLocal } from "../dates";
 import { useStore } from "../store";
-import { DayRater, ratingHue } from "./DayRater";
+import { ratingHue } from "../ratings";
+import { DayRater } from "./DayRater";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const fmt = (n: number) => n.toFixed(1);

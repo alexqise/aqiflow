@@ -4,7 +4,8 @@ import { formatDuration, formatTime, longDate, RECURRENCE_LABELS, relativeDay, t
 import { sectionsFor } from "../selectors";
 import { uid, useStore } from "../store";
 import type { Task } from "../types";
-import { Checkbox, PRIORITIES, PriorityFlag } from "./common";
+import { PRIORITIES } from "../priorities";
+import { Checkbox, PriorityFlag } from "./common";
 import { DatePickerPanel } from "./DatePicker";
 
 const DURATIONS = [0, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240];

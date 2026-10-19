@@ -30,7 +30,7 @@ import {
   Gauge,
 } from "lucide-react";
 
-export const ICONS: Record<string, LucideIcon> = {
+const ICONS: Record<string, LucideIcon> = {
   check: Check,
   open: ExternalLink,
   focus: Target,

@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { isTauri, windowLabel } from "./api";
-import { App, useTheme } from "./App";
+import { App } from "./App";
+import { useTheme } from "./theme";
 import { QuickWindow } from "./components/QuickAdd";
 import { useStore } from "./store";
 import "./styles.css";

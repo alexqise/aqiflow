@@ -43,7 +43,7 @@ export function RightPanel() {
   );
 }
 
-export function calendarDays(date: string, mode: CalendarMode, weekStartsOn: number) {
+function calendarDays(date: string, mode: CalendarMode, weekStartsOn: number) {
   if (mode === "day") return [date];
   if (mode === "3day") return [date, addDays(date, 1), addDays(date, 2)];
   const start = startOfWeek(date, weekStartsOn);

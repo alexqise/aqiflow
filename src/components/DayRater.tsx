@@ -1,6 +1,9 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { ratingHue, ratingKey, useRating } from "../ratings";
+import { NotebookPen } from "lucide-react";
+import { ratingHue, ratingKey, useDayNote, useRating } from "../ratings";
+import { DayNote } from "./DayNote";
+import { longDate, todayStr } from "../dates";
 import { useStore } from "../store";
 
 const VALID_DRAFT = /^(\d{0,2})(\.\d?)?$/;
@@ -14,8 +17,18 @@ function parse(draft: string): number | null | "invalid" {
 }
 
 /** Inline 0.0–10.0 score for a day, color-graded along a red→green spectrum. */
-export function DayRater({ date, compact }: { date: string; compact?: boolean }) {
+export function DayRater({ date, compact, noteButton = true }: { date: string; compact?: boolean; noteButton?: boolean }) {
   const rating = useRating(date);
+  const note = useDayNote(date);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!noteOpen) return;
+    const close = (e: MouseEvent) => !wrapRef.current?.contains(e.target as Node) && setNoteOpen(false);
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [noteOpen]);
   const [draft, setDraft] = useState(rating === null ? "" : rating.toFixed(1));
   const [focused, setFocused] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
@@ -46,6 +59,7 @@ export function DayRater({ date, compact }: { date: string; compact?: boolean })
   };
 
   return (
+    <span className="day-rater-wrap" ref={wrapRef}>
     <label
       className={`day-rater ${score !== null ? "rated" : ""} ${invalid ? "invalid" : ""} ${compact ? "compact" : ""}`}
       style={score !== null ? ({ "--rate-h": ratingHue(score) } as React.CSSProperties) : undefined}
@@ -85,6 +99,22 @@ export function DayRater({ date, compact }: { date: string; compact?: boolean })
       />
       <span className="day-rater-max">/10</span>
     </label>
+    {noteButton && (
+      <button
+        className={`icon-btn day-note-btn ${note ? "has-note" : ""} ${noteOpen ? "active" : ""}`}
+        title={note ? "Edit day note" : "Add a note about this day"}
+        onClick={() => setNoteOpen(!noteOpen)}
+      >
+        <NotebookPen size={15} />
+      </button>
+    )}
+    {noteOpen && (
+      <div className="popover day-note-pop" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="day-note-pop-head">Note for {date === todayStr() ? "today" : longDate(date)}</div>
+        <DayNote date={date} autoFocus rows={6} />
+      </div>
+    )}
+    </span>
   );
 }
 

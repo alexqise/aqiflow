@@ -10,3 +10,9 @@ export function useRating(date: string): number | null {
   const n = raw ? Number(raw) : NaN;
   return Number.isFinite(n) ? n : null;
 }
+
+export const noteKey = (date: string) => `note:${date}`;
+
+export function useDayNote(date: string): string {
+  return useStore((s) => s.settings[noteKey(date)] ?? "");
+}

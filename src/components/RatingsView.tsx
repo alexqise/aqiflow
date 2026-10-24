@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { addDays, longDate, monthName, todayStr, weekdayName, parseLocal } from "../dates";
 import { useStore } from "../store";
 import { ratingHue } from "../ratings";
+import { DayNote } from "./DayNote";
 import { DayRater } from "./DayRater";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -24,6 +25,15 @@ function useRatings(): Map<string, number> {
   }, [settings]);
 }
 
+function useNotes(): Map<string, string> {
+  const settings = useStore((s) => s.settings);
+  return useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [k, v] of Object.entries(settings)) if (k.startsWith("note:") && v.trim()) m.set(k.slice(5), v.trim());
+    return m;
+  }, [settings]);
+}
+
 function shortDate(date: string) {
   const d = parseLocal(date);
   return `${monthName(d.getMonth(), true)} ${d.getDate()}`;
@@ -31,6 +41,7 @@ function shortDate(date: string) {
 
 export function RatingsView() {
   const ratings = useRatings();
+  const notes = useNotes();
   const today = todayStr();
   const thisYear = parseLocal(today).getFullYear();
   const [year, setYear] = useState(thisYear);
@@ -139,7 +150,7 @@ export function RatingsView() {
                     const date = `${year}-${pad(m + 1)}-${pad(i + 1)}`;
                     const v = ratings.get(date);
                     const future = date > today;
-                    const cls = ["px", v !== undefined ? "rated" : "", future ? "future" : "", date === today ? "today" : "", date === selected ? "sel" : ""].join(" ");
+                    const cls = ["px", v !== undefined ? "rated" : "", future ? "future" : "", date === today ? "today" : "", date === selected ? "sel" : "", notes.has(date) ? "has-note" : ""].join(" ");
                     return (
                       <button
                         key={i}
@@ -191,7 +202,7 @@ export function RatingsView() {
         </div>
       </div>
 
-      {tip && <PixelTip date={tip.date} x={tip.x} y={tip.y} rating={ratings.get(tip.date)} />}
+      {tip && <PixelTip date={tip.date} x={tip.x} y={tip.y} rating={ratings.get(tip.date)} note={notes.get(tip.date)} />}
     </div>
   );
 }
@@ -223,13 +234,14 @@ function Legend() {
   );
 }
 
-function PixelTip({ date, x, y, rating }: { date: string; x: number; y: number; rating?: number }) {
+function PixelTip({ date, x, y, rating, note }: { date: string; x: number; y: number; rating?: number; note?: string }) {
   return (
     <div className="px-tip" style={{ left: x, top: y - 8 }}>
       <strong>{rating !== undefined ? `${fmt(rating)}/10` : "Not rated"}</strong>
       <span>
         {weekdayName(date, true)}, {shortDate(date)}
       </span>
+      {note && <em className="px-tip-note">{note.length > 90 ? note.slice(0, 89) + "…" : note}</em>}
     </div>
   );
 }
@@ -248,7 +260,8 @@ function SelectedDay({ date, rating }: { date: string; rating?: number }) {
         </span>
       </div>
       <div className="selected-body">
-        <DayRater date={date} />
+        <DayRater date={date} noteButton={false} />
+        <DayNote date={date} rows={5} />
         <div className="hint" style={{ marginTop: 12 }}>
           {done.length ? `${done.length} task${done.length === 1 ? "" : "s"} completed` : "No completed tasks recorded"}
         </div>
@@ -258,7 +271,7 @@ function SelectedDay({ date, rating }: { date: string; rating?: number }) {
           </div>
         ))}
         <div className="hint" style={{ marginTop: "auto", paddingTop: 12 }}>
-          Click any square to rate or review that day.
+          Click any square to rate, journal or review that day.
         </div>
       </div>
     </div>

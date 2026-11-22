@@ -3690,3 +3690,297 @@ body {
   padding: 12px 16px 16px;
   border-top: 1px solid var(--border);
 }
+
+/* ======================================================================
+   Daily planning — recap column + list panel + day calendar
+   ====================================================================== */
+
+.planning {
+  top: 40px;
+  flex-direction: row;
+  gap: 4px;
+  padding: 0 4px 4px 0;
+  background: var(--chrome);
+  outline: none;
+}
+.plan-side {
+  width: 268px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px 16px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(139, 79, 247, 0.32) 0%, rgba(80, 60, 200, 0.18) 28%, transparent 62%);
+  border-radius: 0 8px 8px 0;
+}
+:root:not([data-theme="dark"]) .plan-side {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.16) 0%, rgba(124, 58, 237, 0.06) 30%, transparent 62%);
+}
+.plan-side > .grow {
+  flex: 1;
+  min-height: 12px;
+}
+.plan-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--text-2);
+  border-radius: 5px;
+}
+.plan-back:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.plan-side h1 {
+  margin: 14px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.plan-sub {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.plan-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 9px 8px 10px;
+}
+.plan-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.plan-card-head .meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+.plan-big {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.plan-big > span:first-child {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+.plan-big .change {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.plan-big .change b {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+}
+.plan-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.plan-bar {
+  display: grid;
+  grid-template-columns: 1fr 44px 34px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.plan-bar .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-bar .track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--chip);
+  overflow: hidden;
+}
+.plan-bar .track i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.plan-bar .m {
+  text-align: right;
+}
+.plan-empty-card {
+  padding: 18px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--bg-subtle);
+  border-radius: 6px;
+}
+.plan-events {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.plan-ev-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.plan-ev-list span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.plan-ev-list i {
+  width: 5px;
+  height: 12px;
+  border-radius: 2px;
+  flex: none;
+}
+.plan-capacity {
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: var(--chip);
+  overflow: hidden;
+}
+.plan-capacity i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.plan-capacity i.over {
+  background: var(--danger);
+}
+.plan-warn {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--peach);
+}
+.plan-next {
+  height: 30px;
+  justify-content: center;
+  width: 100%;
+}
+.plan-foot {
+  display: flex;
+  gap: 6px;
+}
+.plan-foot .plan-next {
+  flex: 1;
+}
+.btn.sm {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.plan-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.plan-main .grow {
+  flex: 1;
+}
+.plan-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding-left: 4px;
+}
+.plan-cal {
+  width: 300px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.plan-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 10px 16px;
+}
+.plan-list h3 {
+  margin: 2px 2px 12px;
+  font-size: 15px;
+  font-weight: 650;
+}
+.plan-add {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: text;
+}
+.plan-add input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+}
+.plan-add input::placeholder {
+  color: var(--text-3);
+}
+.plan-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 36px 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.plan-empty svg {
+  color: var(--lavender);
+  margin-bottom: 10px;
+}
+.plan-empty b {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+.plan-section {
+  border-radius: 8px;
+  padding-bottom: 6px;
+  transition: background 0.12s;
+}
+.plan-section.over {
+  background: var(--accent-softer);
+}
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.plan-row .task-row {
+  flex: 1;
+  min-width: 0;
+}
+.plan-hint {
+  padding: 6px 10px;
+}

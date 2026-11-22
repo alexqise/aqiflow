@@ -1,158 +1,270 @@
-import { Archive, ArrowRight, Check, ChevronLeft, Plus, Sun, Sunrise, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarCheck, Plus, Sun, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { scheduleFor } from "../actions";
-import { addDays, formatDuration, longDate, todayStr } from "../dates";
+import { addDays, formatDuration, minutesOfDay, todayStr, weekdayName } from "../dates";
 import { droppedTaskId, isTaskDrag } from "../dnd";
 import { inboxTasks, isOverdue, sortTasks } from "../selectors";
 import { useStore } from "../store";
 import type { Task } from "../types";
+import { DayRater } from "./DayRater";
 import { TaskRow } from "./TaskRow";
 import { TimeGrid } from "./TimeGrid";
 
-const STEPS = ["Review", "Choose", "Time-block", "Ready"];
-
+/** Two-step daily planning ritual: recap yesterday, then plan today. */
 export function PlanningMode() {
-  const tasks = useStore((s) => s.tasks);
-  const settings = useStore((s) => s.settings);
-  const today = todayStr();
-  const overdue = sortTasks(tasks.filter((t) => isOverdue(t, today)));
-  const [step, setStep] = useState(overdue.length ? 0 : 1);
+  const [step, setStep] = useState<1 | 2>(1);
   const close = () => useStore.getState().set({ planningOpen: false });
-
-  const todays = sortTasks(tasks.filter((t) => !t.done && t.date === today));
-  const planned = todays.reduce((m, t) => m + (t.duration || 0), 0);
-  const capacity = (Number(settings.dailyGoalHours) || 6) * 60;
-  const blocked = todays.filter((t) => t.start).length;
+  const today = todayStr();
+  const yesterday = addDays(today, -1);
+  const day = step === 1 ? yesterday : today;
 
   return (
     <div className="planning" onKeyDown={(e) => e.key === "Escape" && close()} tabIndex={-1}>
-      <div className="planning-head drag" data-tauri-drag-region>
-        <h2 data-tauri-drag-region>Plan your day</h2>
-        <span className="hint" data-tauri-drag-region>
-          {longDate(today)}
-        </span>
-        <div className="steps">
-          {STEPS.map((s, i) => (
-            <span key={s} style={{ display: "contents" }}>
-              {i > 0 && <span className="step-line" />}
-              <button className={`step ${i === step ? "on" : ""} ${i < step ? "complete" : ""}`} onClick={() => setStep(i)}>
-                <span className="n">{i < step ? <Check size={11} strokeWidth={3} /> : i + 1}</span>
-                {s}
-              </button>
-            </span>
-          ))}
-        </div>
-        <button className="icon-btn" onClick={close} title="Close (esc)">
-          <X size={17} />
+      <aside className="plan-side">
+        <button className="plan-back" onClick={close}>
+          <ArrowLeft size={13} /> Back to Aqiflow
         </button>
-      </div>
+        {step === 1 ? <RecapSide yesterday={yesterday} onNext={() => setStep(2)} /> : <PlanSide onBack={() => setStep(1)} onDone={close} />}
+      </aside>
 
-      <div className="planning-body">
-        {step === 0 && <ReviewStep overdue={overdue} />}
-        {step === 1 && <ChooseStep todays={todays} planned={planned} capacity={capacity} />}
-        {step === 2 && <BlockStep todays={todays} />}
-        {step === 3 && (
-          <div className="plan-done">
-            <div className="big">☀️</div>
-            <h3>You're all set</h3>
-            <p>
-              {todays.length} task{todays.length === 1 ? "" : "s"} planned · {formatDuration(planned) || "0m"} estimated · {blocked} on your calendar.
-              {planned > capacity && " That's more than your daily capacity — consider moving something to tomorrow."}
-            </p>
-            <button
-              className="btn primary"
-              style={{ height: 38, padding: "0 20px", fontSize: 14 }}
-              onClick={() => {
-                const s = useStore.getState();
-                s.setSetting("lastPlanned", today);
-                s.setView({ kind: "today" });
-                close();
-              }}
-            >
-              Start my day <ArrowRight size={15} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {step < 3 && (
-        <div className="planning-foot">
-          {step > 0 && (
-            <button className="btn ghost" onClick={() => setStep(step - 1)}>
-              <ChevronLeft size={15} /> Back
-            </button>
-          )}
-          <div className="grow" />
-          <span className="hint" style={{ marginRight: 8 }}>
-            {formatDuration(planned) || "0m"} of {formatDuration(capacity)} planned
+      <section className="panel plan-main">
+        <header className="panel-header">
+          <span className="plan-step">
+            <Sun size={14} /> Daily Planning - {step}/2
           </span>
-          <button className="btn primary" onClick={() => setStep(step + 1)}>
-            {step === 0 && overdue.length ? "Continue" : "Next"} <ArrowRight size={14} />
+          <div className="grow" />
+          <button className="icon-btn" onClick={close} title="Close (esc)">
+            <X size={16} />
           </button>
+        </header>
+        {step === 1 ? <RecapList yesterday={yesterday} /> : <PlanList />}
+      </section>
+
+      <section className="panel plan-cal">
+        <TimeGrid key={day} days={[day]} />
+      </section>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------- step 1: recap */
+
+function Card({ title, meta, children }: { title: string; meta?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="plan-card">
+      <div className="plan-card-head">
+        <span>{title}</span>
+        {meta && <span className="meta">{meta}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function doneOn(tasks: Task[], date: string) {
+  return tasks.filter((t) => t.done && t.doneAt?.slice(0, 10) === date);
+}
+
+function RecapSide({ yesterday, onNext }: { yesterday: string; onNext: () => void }) {
+  const tasks = useStore((s) => s.tasks);
+  const projects = useStore((s) => s.projects);
+  const events = useStore((s) => s.events);
+  const before = addDays(yesterday, -1);
+  const done = doneOn(tasks, yesterday);
+  const prev = doneOn(tasks, before).length;
+  const change = prev ? Math.round(((done.length - prev) / prev) * 100) : done.length ? 100 : 0;
+  const minutes = done.reduce((m, t) => m + (t.duration || 0), 0);
+
+  const byProject = new Map<string, number>();
+  for (const t of done) byProject.set(t.projectId ?? "", (byProject.get(t.projectId ?? "") ?? 0) + (t.duration || 0));
+  const rows = [...byProject.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const top = Math.max(1, ...rows.map((r) => r[1]));
+
+  const evs = events.filter((e) => !e.allDay && e.start.slice(0, 10) === yesterday);
+  const evMinutes = evs.reduce((m, e) => m + Math.max(0, minutesOfDay(e.end) - minutesOfDay(e.start)), 0);
+  const circ = 2 * Math.PI * 30;
+  const evShare = Math.min(1, evMinutes / (10 * 60));
+
+  return (
+    <>
+      <h1>Yesterday’s Recap</h1>
+      <p className="plan-sub">Reflect on your progress</p>
+
+      <Card title="Tasks done yesterday">
+        <div className="plan-big">
+          <span>{done.length}</span>
+          <span className="change">
+            <b>{change > 0 ? "+" : ""}{change}%</b>
+            From previous {weekdayName(before)}
+          </span>
+        </div>
+      </Card>
+
+      <Card title="Yesterday’s tasks" meta={formatDuration(minutes) || "0m"}>
+        {rows.length ? (
+          <div className="plan-bars">
+            {rows.map(([pid, m]) => {
+              const p = projects.find((x) => x.id === pid);
+              return (
+                <div key={pid} className="plan-bar">
+                  <span className="name">{p?.name ?? "No project"}</span>
+                  <span className="track">
+                    <i style={{ width: `${(m / top) * 100}%`, background: p?.color ?? "var(--text-3)" }} />
+                  </span>
+                  <span className="m">{formatDuration(m) || "–"}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="plan-empty-card">Nothing finished yesterday</div>
+        )}
+      </Card>
+
+      <Card title="Yesterday’s events" meta={formatDuration(evMinutes) || "0m"}>
+        <div className="plan-events">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--chip)" strokeWidth="8" />
+            {evShare > 0 && <circle
+              cx="36"
+              cy="36"
+              r="30"
+              fill="none"
+              stroke="#e8955d"
+              strokeWidth="8"
+              strokeDasharray={`${circ * evShare} ${circ}`}
+              transform="rotate(-90 36 36)"
+              strokeLinecap="round"
+            />}
+            <text x="36" y="40" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text)">
+              {formatDuration(evMinutes) || "0m"}
+            </text>
+          </svg>
+          <div className="plan-ev-list">
+            {evs.slice(0, 3).map((e) => (
+              <span key={e.id}>
+                <i style={{ background: e.color }} />
+                {e.title || "(No title)"}
+              </span>
+            ))}
+            {!evs.length && <span className="hint">No meetings</span>}
+          </div>
+        </div>
+      </Card>
+
+      <div className="grow" />
+      <Card title="Rate yesterday">
+        <DayRater date={yesterday} noteButton />
+      </Card>
+      <button className="btn primary plan-next" onClick={onNext}>
+        Next: Plan Today
+      </button>
+    </>
+  );
+}
+
+function RecapList({ yesterday }: { yesterday: string }) {
+  const tasks = useStore((s) => s.tasks);
+  const [draft, setDraft] = useState("");
+  const list = sortTasks(tasks.filter((t) => t.doneAt?.slice(0, 10) === yesterday || (t.date === yesterday && !t.done)));
+  const add = () => {
+    const title = draft.trim();
+    if (!title) return;
+    const s = useStore.getState();
+    const t = s.createTask({ title, date: yesterday });
+    s.updateTask(t.id, { done: true, doneAt: `${yesterday}T18:00` });
+    setDraft("");
+  };
+  return (
+    <div className="plan-list">
+      <h3>Yesterday</h3>
+      <label className="add-bar plan-add">
+        <Plus size={15} />
+        <input placeholder="Add an achievement" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+        <kbd>↵</kbd>
+      </label>
+      {list.map((t) => (
+        <TaskRow key={t.id} task={t} showDate={false} />
+      ))}
+      {!list.length && (
+        <div className="plan-empty">
+          <CalendarCheck size={22} />
+          <b>Reflect and celebrate</b>
+          <span>Add your achievements</span>
         </div>
       )}
     </div>
   );
 }
 
-function ActionRow({ task, children, showDate = true }: { task: Task; children: ReactNode; showDate?: boolean }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <TaskRow task={task} showDate={showDate} />
-      </div>
-      <div style={{ display: "flex", gap: 2 }}>{children}</div>
-    </div>
-  );
-}
+/* ------------------------------------------------------- step 2: plan today */
 
-function ReviewStep({ overdue }: { overdue: Task[] }) {
+function PlanSide({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const tasks = useStore((s) => s.tasks);
+  const settings = useStore((s) => s.settings);
+  const today = todayStr();
+  const todays = tasks.filter((t) => !t.done && t.date === today);
+  const planned = todays.reduce((m, t) => m + (t.duration || 0), 0);
+  const capacity = (Number(settings.dailyGoalHours) || 6) * 60;
+  const blocked = todays.filter((t) => t.start).length;
+  const overdue = tasks.filter((t) => isOverdue(t, today));
+  const pct = Math.min(100, (planned / capacity) * 100);
+
   return (
-    <div className="planning-col">
-      <div className="col-head">
-        <h3>Review unfinished tasks</h3>
-        <p>
-          {overdue.length
-            ? `${overdue.length} task${overdue.length === 1 ? "" : "s"} slipped from previous days. Decide what to do with each one.`
-            : "Nothing left over from previous days. Nice!"}
-        </p>
-      </div>
-      <div className="list-scroll" style={{ maxWidth: 820 }}>
-        {overdue.map((t) => (
-          <ActionRow key={t.id} task={t}>
-            <button className="btn ghost" title="Do today" onClick={() => scheduleFor(t, "today")}>
-              <Sun size={14} /> Today
-            </button>
-            <button className="btn ghost" title="Do tomorrow" onClick={() => scheduleFor(t, "tomorrow")}>
-              <Sunrise size={14} /> Tomorrow
-            </button>
-            <button className="btn ghost" title="Someday" onClick={() => scheduleFor(t, "someday")}>
-              <Archive size={14} />
-            </button>
-          </ActionRow>
-        ))}
-        {overdue.length > 1 && (
-          <button
-            className="btn"
-            style={{ margin: "14px 12px" }}
-            onClick={() => overdue.forEach((t) => scheduleFor(t, "today"))}
-          >
+    <>
+      <h1>Plan Today</h1>
+      <p className="plan-sub">Pick what matters, then give it time</p>
+
+      <Card title="Planned" meta={`${formatDuration(capacity)} capacity`}>
+        <div className="plan-big">
+          <span>{formatDuration(planned) || "0m"}</span>
+          <span className="change">
+            <b>{todays.length} tasks</b>
+            {blocked} on the calendar
+          </span>
+        </div>
+        <div className="plan-capacity">
+          <i className={planned > capacity ? "over" : ""} style={{ width: `${pct}%` }} />
+        </div>
+        {planned > capacity && <p className="plan-warn">More than your daily capacity. Consider moving something to tomorrow.</p>}
+      </Card>
+
+      {overdue.length > 0 && (
+        <Card title="Overdue" meta={overdue.length}>
+          <button className="btn ghost sm" onClick={() => overdue.forEach((t) => scheduleFor(t, "today"))}>
             Move all to today
           </button>
-        )}
+        </Card>
+      )}
+
+      <div className="grow" />
+      <div className="plan-foot">
+        <button className="btn ghost" onClick={onBack}>
+          Back
+        </button>
+        <button
+          className="btn primary plan-next"
+          onClick={() => {
+            const s = useStore.getState();
+            s.setSetting("lastPlanned", today);
+            s.setView({ kind: "today" });
+            onDone();
+          }}
+        >
+          Start my day <ArrowRight size={14} />
+        </button>
       </div>
-    </div>
+    </>
   );
 }
 
-function DropCol({ patch, children, className }: { patch: Partial<Task>; children: ReactNode; className?: string }) {
+function DropSection({ title, count, patch, children }: { title: string; count: number; patch?: Partial<Task>; children: ReactNode }) {
   const [over, setOver] = useState(false);
   return (
     <div
-      className={`planning-col ${className ?? ""}`}
-      style={over ? { background: "var(--accent-softer)" } : undefined}
+      className={`plan-section ${over ? "over" : ""}`}
       onDragOver={(e) => {
-        if (!isTaskDrag(e)) return;
+        if (!patch || !isTaskDrag(e)) return;
         e.preventDefault();
         setOver(true);
       }}
@@ -160,97 +272,71 @@ function DropCol({ patch, children, className }: { patch: Partial<Task>; childre
       onDrop={(e) => {
         setOver(false);
         const id = droppedTaskId(e);
-        if (!id) return;
+        if (!id || !patch) return;
         e.preventDefault();
         useStore.getState().updateTask(id, patch);
       }}
     >
+      <div className="section-label">
+        <span>{title}</span>
+        <span className="count-chip">{count}</span>
+      </div>
       {children}
     </div>
   );
 }
 
-function ChooseStep({ todays, planned, capacity }: { todays: Task[]; planned: number; capacity: number }) {
-  const tasks = useStore((s) => s.tasks);
-  const today = todayStr();
-  const inbox = sortTasks(inboxTasks(tasks));
-  const soon = sortTasks(tasks.filter((t) => !t.done && t.date && t.date > today && t.date <= addDays(today, 7)));
-  const pct = Math.min(100, (planned / capacity) * 100);
-
-  const add = (t: Task) => scheduleFor(t, "today");
+function Pull({ task }: { task: Task }) {
   return (
-    <>
-      <DropCol patch={{ date: null, start: null }}>
-        <div className="col-head">
-          <h3>Choose what to work on</h3>
-          <p>Pull tasks into today from your inbox and the week ahead. Drag them across, or click +.</p>
-        </div>
-        <div className="list-scroll">
-          <div className="section-head">Inbox <span className="meta">{inbox.length}</span></div>
-          {inbox.map((t) => (
-            <ActionRow key={t.id} task={t}>
-              <button className="icon-btn" title="Add to today" onClick={() => add(t)}>
-                <Plus size={16} />
-              </button>
-            </ActionRow>
-          ))}
-          {!inbox.length && <div className="hint" style={{ padding: "4px 12px" }}>Inbox is empty.</div>}
-          <div className="section-head" style={{ marginTop: 12 }}>Next 7 days <span className="meta">{soon.length}</span></div>
-          {soon.map((t) => (
-            <ActionRow key={t.id} task={t}>
-              <button className="icon-btn" title="Pull into today" onClick={() => add(t)}>
-                <Plus size={16} />
-              </button>
-            </ActionRow>
-          ))}
-        </div>
-      </DropCol>
-      <DropCol patch={{ date: today }} className="narrow">
-        <div className="col-head">
-          <h3>Today</h3>
-          <p>{todays.length} tasks</p>
-        </div>
-        <div className="capacity">
-          <div className="nums">
-            {formatDuration(planned) || "0m"} <span>of {formatDuration(capacity)} capacity</span>
-          </div>
-          <div className="bar">
-            <i className={planned > capacity ? "over" : ""} style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-        <div className="list-scroll">
-          {todays.map((t) => (
-            <ActionRow key={t.id} task={t} showDate={false}>
-              <button className="icon-btn" title="Remove from today" onClick={() => scheduleFor(t, "none")}>
-                <X size={14} />
-              </button>
-            </ActionRow>
-          ))}
-        </div>
-      </DropCol>
-    </>
+    <div className="plan-row">
+      <TaskRow task={task} />
+      <button className="icon-btn" title="Do today" onClick={() => scheduleFor(task, "today")}>
+        <Plus size={16} />
+      </button>
+    </div>
   );
 }
 
-function BlockStep({ todays }: { todays: Task[] }) {
-  const unblocked = todays.filter((t) => !t.start);
+function PlanList() {
+  const tasks = useStore((s) => s.tasks);
+  const today = todayStr();
+  const todays = sortTasks(tasks.filter((t) => !t.done && t.date === today));
+  const overdue = sortTasks(tasks.filter((t) => isOverdue(t, today)));
+  const inbox = sortTasks(inboxTasks(tasks));
+  const soon = sortTasks(tasks.filter((t) => !t.done && t.date && t.date > today && t.date <= addDays(today, 7)));
   return (
-    <>
-      <div className="planning-col">
-        <div className="col-head">
-          <h3>Time-block your day</h3>
-          <p>Drag tasks onto the calendar to reserve time for them. Drag the bottom edge to resize.</p>
-        </div>
-        <div className="list-scroll">
-          {unblocked.map((t) => (
-            <TaskRow key={t.id} task={t} showDate={false} />
+    <div className="plan-list">
+      <h3>Plan today</h3>
+      <DropSection title="Today" count={todays.length} patch={{ date: today, someday: false }}>
+        {todays.map((t) => (
+          <div key={t.id} className="plan-row">
+            <TaskRow task={t} showDate={false} />
+            <button className="icon-btn" title="Remove from today" onClick={() => scheduleFor(t, "none")}>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+        {!todays.length && <div className="hint plan-hint">Drag tasks here, or press + on one below.</div>}
+      </DropSection>
+      {overdue.length > 0 && (
+        <DropSection title="Overdue" count={overdue.length}>
+          {overdue.map((t) => (
+            <Pull key={t.id} task={t} />
           ))}
-          {!unblocked.length && <div className="hint" style={{ padding: "8px 12px" }}>Every task for today has a time slot. 🎯</div>}
-        </div>
-      </div>
-      <div className="planning-col narrow" style={{ width: 460 }}>
-        <TimeGrid days={[todayStr()]} />
-      </div>
-    </>
+        </DropSection>
+      )}
+      <DropSection title="Inbox" count={inbox.length} patch={{ date: null, start: null, someday: false }}>
+        {inbox.map((t) => (
+          <Pull key={t.id} task={t} />
+        ))}
+      </DropSection>
+      {soon.length > 0 && (
+        <DropSection title="Next 7 days" count={soon.length}>
+          {soon.map((t) => (
+            <Pull key={t.id} task={t} />
+          ))}
+        </DropSection>
+      )}
+    </div>
   );
 }

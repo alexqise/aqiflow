@@ -64,6 +64,8 @@ interface State {
   rightPanel: boolean;
   /** Task list panel collapsed (calendar takes the full width). */
   listHidden: boolean;
+  /** Inline "Add new task" bar expanded in the task panel. */
+  addBarOpen: boolean;
   calDate: string;
   calMode: CalendarMode;
   panelDate: string;
@@ -162,6 +164,7 @@ export const useStore = create<State>((set, get) => {
     shortcutsOpen: false,
     rightPanel: true,
     listHidden: false,
+    addBarOpen: false,
     calDate: todayStr(),
     calMode: "3day",
     panelDate: todayStr(),

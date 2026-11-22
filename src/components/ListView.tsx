@@ -1,10 +1,10 @@
 import type React from "react";
-import { CheckCircle2, ChevronDown, CirclePlus, Inbox, SlidersHorizontal, Sun, Archive, CalendarRange, Hash, Folder, LayoutList } from "lucide-react";
+import { CheckCircle2, ChevronDown, CirclePlus, Hourglass, Inbox, SlidersHorizontal, Sun, Archive, CalendarRange, Hash, Folder, LayoutList } from "lucide-react";
 import { useState } from "react";
-import { formatDuration, todayStr } from "../dates";
+import { addDays, formatDuration, relativeDay, todayStr } from "../dates";
 import { droppedTaskId, isTaskDrag } from "../dnd";
 import { defaultsFor, plannedMinutes, sectionsFor, viewTitle, type Section } from "../selectors";
-import { useStore } from "../store";
+import { useStore, type MenuItem } from "../store";
 import type { Task, View } from "../types";
 import { Composer } from "./Composer";
 import { DayRater } from "./DayRater";
@@ -163,8 +163,20 @@ function SectionBlock({ section, view, compact }: { section: Section; view: View
   );
 }
 
+const DURATIONS = [0, 5, 10, 15, 30, 45, 60, 90, 120];
+
+/** "Add new task" bar that expands in place, with date / duration / project chips. */
 function InlineAdd({ view }: { view: View }) {
-  const [open, setOpen] = useState(false);
+  const open = useStore((s) => s.addBarOpen);
+  const projects = useStore((s) => s.projects);
+  const defaultDuration = useStore((s) => Number(s.settings.defaultDuration) || 30);
+  const [over, setOver] = useState<Partial<Task>>({});
+  const st = useStore.getState;
+  const setOpen = (v: boolean) => {
+    st().set({ addBarOpen: v });
+    if (!v) setOver({});
+  };
+
   if (!open)
     return (
       <button className="add-bar" onClick={() => setOpen(true)}>
@@ -173,17 +185,74 @@ function InlineAdd({ view }: { view: View }) {
         <kbd>C</kbd>
       </button>
     );
+
+  const defaults = { ...defaultsFor(view), ...over };
+  const today = todayStr();
+  const dateLabel = defaults.someday ? "Someday" : defaults.date ? relativeDay(defaults.date) : "No date";
+  const duration = defaults.duration ?? defaultDuration;
+  const project = projects.find((p) => p.id === defaults.projectId);
+
+  const menuAt = (e: React.MouseEvent, items: MenuItem[]) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    st().openMenu(r.left, r.bottom + 4, items);
+  };
+
   return (
     <div className="add-bar-open">
-      <Composer
-        autoFocus
-        defaults={defaultsFor(view)}
-        onCancel={() => setOpen(false)}
-        onDone={(t, keep) => {
-          if (t) useStore.getState().select(t.id);
-          if (!keep) setOpen(false);
-        }}
-      />
+      <div className="add-row">
+        <CirclePlus size={16} className="add-plus" />
+        <Composer
+          autoFocus
+          placeholder="Task title"
+          defaults={defaults}
+          onCancel={() => setOpen(false)}
+          onDone={(t, keep) => {
+            if (t) st().select(t.id);
+            if (!keep) setOpen(false);
+          }}
+        />
+        <button
+          className="add-chip"
+          title="When"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) =>
+            menuAt(e, [
+              { label: "Today", icon: "today", onSelect: () => setOver({ ...over, date: today, someday: false }) },
+              { label: "Tomorrow", icon: "tomorrow", onSelect: () => setOver({ ...over, date: addDays(today, 1), someday: false }) },
+              { label: "Someday", icon: "someday", onSelect: () => setOver({ ...over, date: null, someday: true }) },
+              { label: "No date", icon: "inbox", onSelect: () => setOver({ ...over, date: null, someday: false }) },
+            ])
+          }
+        >
+          {dateLabel.length > 3 && dateLabel !== "Someday" && dateLabel !== "No date" ? dateLabel.slice(0, 3) : dateLabel}
+        </button>
+        <button
+          className="add-chip icon"
+          title={`Duration: ${formatDuration(duration) || "none"}`}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) =>
+            menuAt(
+              e,
+              DURATIONS.map((d) => ({ label: d ? formatDuration(d) : "No estimate", icon: d === duration ? "check" : undefined, onSelect: () => setOver({ ...over, duration: d }) })),
+            )
+          }
+        >
+          {over.duration !== undefined ? formatDuration(duration) || <Hourglass size={12} /> : <Hourglass size={12} />}
+        </button>
+        <button
+          className="add-chip icon"
+          title={project ? `Project: ${project.name}` : "Project"}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) =>
+            menuAt(e, [
+              { label: "No project", icon: !project ? "check" : undefined, onSelect: () => setOver({ ...over, projectId: null }) },
+              ...projects.map((p) => ({ label: p.name, icon: p.id === project?.id ? "check" : "project", onSelect: () => setOver({ ...over, projectId: p.id }) })),
+            ])
+          }
+        >
+          {project ? <span className="dot" style={{ background: project.color }} /> : <Hash size={12} />}
+        </button>
+      </div>
     </div>
   );
 }

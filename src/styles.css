@@ -3125,3 +3125,93 @@ body {
 .now-label {
   text-transform: lowercase;
 }
+
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.add-row .add-plus {
+  color: var(--text-3);
+  flex: none;
+}
+.add-row > input {
+  flex: 1;
+  min-width: 80px;
+}
+.add-row .token-row {
+  order: 10;
+  width: 100%;
+  margin: 4px 0 0 22px;
+  min-height: 0;
+}
+.add-row .token-row .hint {
+  display: none;
+}
+.add-chip {
+  height: 20px;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.add-chip.icon {
+  padding: 0 5px;
+}
+.add-chip:hover {
+  color: var(--text);
+}
+.add-chip .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+.add-bar-open {
+  background: var(--bg);
+  border-color: var(--border-strong);
+  padding: 7px 8px;
+}
+.add-bar-open:focus-within {
+  border-color: var(--text-4);
+}
+
+/* command bar: one slim line until you type */
+.overlay:has(.cmd-bar) {
+  background: rgba(0, 0, 0, 0.18);
+}
+.modal.cmd-bar {
+  width: 740px;
+  margin-top: 30vh;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-strong);
+}
+.cmd-bar .cmd-input {
+  height: 58px;
+  padding: 0 18px 0 16px;
+  gap: 12px;
+  border-bottom: 0;
+}
+.cmd-bar .cmd-input input {
+  font-size: 15.5px;
+}
+.cmd-bar .cmd-mark {
+  color: var(--accent);
+}
+.cmd-bar .cmd-list {
+  border-top: 1px solid var(--border);
+  max-height: 46vh;
+}
+.cmd-bar .cmd-item.active {
+  background: var(--bg-active);
+}
+.cmd-bar .cmd-item.active svg {
+  color: var(--text);
+}

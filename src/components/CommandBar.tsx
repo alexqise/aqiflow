@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Command } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { scheduleFor } from "../actions";
 import { relativeDay, todayStr } from "../dates";
@@ -34,6 +34,8 @@ function score(text: string, q: string): number {
 export function CommandBar() {
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
+  // The bar stays a single line until you type or press ↓.
+  const [browse, setBrowse] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const s = useStore.getState();
   const tasks = useStore((st) => st.tasks);
@@ -138,21 +140,23 @@ export function CommandBar() {
     c.run();
   };
 
+  const showList = query !== "" || browse;
   let lastGroup = "";
   return (
     <div className="overlay" onMouseDown={close}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal cmd-bar" onMouseDown={(e) => e.stopPropagation()}>
         <div className="cmd-input">
-          <Search size={18} />
+          <Command size={18} className="cmd-mark" />
           <input
             autoFocus
-            placeholder={selected ? `Do something with “${selected.title.slice(0, 40)}”…` : "Search tasks, run a command…"}
+            placeholder={selected ? `Do something with “${selected.title.slice(0, 40)}”…` : "Type a command, search, or add a task…"}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
               e.stopPropagation();
               if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "n")) {
                 e.preventDefault();
+                if (!showList) return setBrowse(true);
                 setActive((a) => Math.min(results.length - 1, a + 1));
               } else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "p")) {
                 e.preventDefault();
@@ -166,6 +170,8 @@ export function CommandBar() {
             }}
           />
         </div>
+        {showList && (
+        <>
         <div className="cmd-list" ref={listRef}>
           {results.map((c, i) => {
             const head = c.group !== lastGroup ? c.group : null;
@@ -201,6 +207,8 @@ export function CommandBar() {
             <kbd>esc</kbd> close
           </span>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

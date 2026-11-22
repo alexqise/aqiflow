@@ -137,6 +137,10 @@ function useKeyboard() {
         gPending = Date.now();
         return;
       }
+      if (k === "c" && !s.listHidden && s.view.kind !== "ratings" && s.view.kind !== "calendar" && s.view.kind !== "done") {
+        e.preventDefault();
+        return s.set({ addBarOpen: true });
+      }
       if (k === "n" || k === "c") {
         e.preventDefault();
         return s.set({ quickAdd: { open: true } });

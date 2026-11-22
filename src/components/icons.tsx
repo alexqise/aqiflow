@@ -11,6 +11,8 @@ import {
   Inbox,
   Keyboard,
   Moon,
+  MoonStar,
+  SunDim,
   Plus,
   Settings,
   Sparkles,
@@ -59,6 +61,10 @@ const ICONS: Record<string, LucideIcon> = {
   go: ArrowRight,
   quick: Zap,
   rating: Gauge,
+  "plan-day": SunDim,
+  "shutdown-day": MoonStar,
+  "plan-week": Sun,
+  "shutdown-week": Moon,
 };
 
 export function MenuIcon({ name, size = 15 }: { name?: string; size?: number }) {

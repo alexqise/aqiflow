@@ -9,6 +9,7 @@ import { EventEditor } from "./components/EventEditor";
 import { FocusMode } from "./components/FocusMode";
 import { fmtClock, focusElapsed } from "./focus";
 import { ListView } from "./components/ListView";
+import { Shutdown } from "./components/Shutdown";
 import { PlanningMode } from "./components/PlanningMode";
 import { RatingsView } from "./components/RatingsView";
 import { ContextMenu, ShortcutsHelp, Toast } from "./components/Popups";
@@ -58,6 +59,7 @@ function useKeyboard() {
         if (s.menu) return s.set({ menu: null });
         if (s.datePicker) return s.set({ datePicker: null });
         if (s.eventEditor) return s.set({ eventEditor: null });
+        if (s.shutdown) return s.set({ shutdown: null });
         if (s.detailId) return s.openDetail(null);
         if (s.commandOpen) return s.set({ commandOpen: false });
         if (s.quickAdd.open) return s.set({ quickAdd: { open: false } });
@@ -104,7 +106,7 @@ function useKeyboard() {
         return s.setView(NUMBERED_VIEWS[Number(e.key) - 1]);
       }
 
-      const overlay = s.commandOpen || s.quickAdd.open || s.detailId || s.eventEditor || s.settingsOpen || s.shortcutsOpen || (s.focus && s.focusOpen) || s.menu || s.datePicker;
+      const overlay = s.shutdown || s.commandOpen || s.quickAdd.open || s.detailId || s.eventEditor || s.settingsOpen || s.shortcutsOpen || (s.focus && s.focusOpen) || s.menu || s.datePicker;
       if (overlay) return;
 
       const sel = s.tasks.find((t) => t.id === s.selectedId);
@@ -256,6 +258,7 @@ export function App() {
     detail: !!s.detailId,
     event: !!s.eventEditor,
     planning: s.planningOpen,
+    shutdown: !!s.shutdown,
     focus: !!s.focus && s.focusOpen,
     settings: s.settingsOpen,
     shortcuts: s.shortcutsOpen,
@@ -292,6 +295,7 @@ export function App() {
         </div>
       </div>
       {o.planning && <PlanningMode />}
+      {o.shutdown && <Shutdown />}
       {o.focus && <FocusMode />}
       {o.detail && <TaskDetail />}
       {o.event && <EventEditor />}

@@ -49,6 +49,8 @@ export interface MenuItem {
   toggle?: boolean;
   /** Muted text before the shortcut, e.g. the current value of a submenu. */
   value?: string;
+  /** Non-clickable section title. */
+  header?: boolean;
   /** Shows a chevron; selecting it usually opens another menu. */
   submenu?: boolean;
   icon?: string;
@@ -81,6 +83,8 @@ interface State {
   commandOpen: boolean;
   quickAdd: { open: boolean; defaults?: Partial<Task> };
   planningOpen: boolean;
+  /** Shutdown ritual open for the day or the week. */
+  shutdown: "day" | "week" | null;
   focus: { taskId: string; startedAt: number; pausedAt: number | null; elapsedBefore: number } | null;
   /** Full-screen focus view shown (the timer keeps running in the title bar when closed). */
   focusOpen: boolean;
@@ -184,6 +188,7 @@ export const useStore = create<State>((set, get) => {
     commandOpen: false,
     quickAdd: { open: false },
     planningOpen: false,
+    shutdown: null,
     focus: null,
     focusOpen: false,
     settingsOpen: false,

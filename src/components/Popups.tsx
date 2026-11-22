@@ -22,7 +22,7 @@ export function ContextMenu() {
     if (!menu) return;
     const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && close();
     const items = menu.items;
-    const selectable = items.map((it, i) => (it.separator ? -1 : i)).filter((i) => i >= 0);
+    const selectable = items.map((it, i) => (it.separator || it.header ? -1 : i)).filter((i) => i >= 0);
     const onKey = (e: KeyboardEvent) => {
       e.stopPropagation();
       if (e.key === "Escape") close();
@@ -60,6 +60,10 @@ export function ContextMenu() {
       {menu.items.map((it, i) =>
         it.separator ? (
           <div key={i} className="menu-sep" />
+        ) : it.header ? (
+          <div key={i} className="menu-header">
+            {it.label}
+          </div>
         ) : (
           <button
             key={i}

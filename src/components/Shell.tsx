@@ -109,12 +109,17 @@ export function Rail() {
   const more = (e: React.MouseEvent) => {
     const r = e.currentTarget.getBoundingClientRect();
     const st = s();
-    st.openMenu(r.right + 8, r.top - 150, [
+    st.openMenu(r.right + 8, r.top - 260, [
+      { label: "Rituals", header: true },
+      { label: "Daily Planning", icon: "plan-day", shortcut: "⇧⌘P", onSelect: () => st.set({ planningOpen: true }) },
+      { label: "Daily Shutdown", icon: "shutdown-day", onSelect: () => st.set({ shutdown: "day" }) },
+      { label: "Weekly Planning", icon: "plan-week", onSelect: () => (st.setView({ kind: "upcoming" }), st.set({ calMode: "week", calDate: todayStr(), listHidden: false })) },
+      { label: "Weekly Shutdown", icon: "shutdown-week", onSelect: () => st.set({ shutdown: "week" }) },
+      { separator: true },
       { label: "Upcoming", icon: "upcoming", onSelect: () => st.setView({ kind: "upcoming" }) },
       { label: "Someday", icon: "someday", onSelect: () => st.setView({ kind: "someday" }) },
       { label: "Done", icon: "done", onSelect: () => st.setView({ kind: "done" }) },
       { separator: true },
-      { label: "Plan my day", icon: "plan", shortcut: "⇧⌘P", onSelect: () => st.set({ planningOpen: true }) },
       { label: "Settings", icon: "settings", shortcut: "⌘,", onSelect: () => st.set({ settingsOpen: true }) },
       { label: "Shortcuts", icon: "keyboard", shortcut: "?", onSelect: () => st.set({ shortcutsOpen: true }) },
     ]);

@@ -18,7 +18,7 @@ import { Rail, TitleBar } from "./components/Shell";
 import { TaskDetail } from "./components/TaskDetail";
 import { addDays, diffMinutes, minutesOfDay, todayStr, toDateTimeStr } from "./dates";
 import { shallow } from "zustand/shallow";
-import { useStore } from "./store";
+import { useStore, anchorOf } from "./store";
 import { useTheme } from "./theme";
 import type { View } from "./types";
 
@@ -169,7 +169,7 @@ function useKeyboard() {
       switch (k) {
         case "enter":
           e.preventDefault();
-          return s.openDetail(sel.id);
+          return s.openDetail(sel.id, anchorOf(document.querySelector(`.task-row[data-task-id="${sel.id}"]`)));
         case "e":
         case "x":
           return s.toggleDone(sel.id);

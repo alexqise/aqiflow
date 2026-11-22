@@ -26,6 +26,20 @@ export const uid = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
+export interface Anchor {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}
+
+/** Plain copy of an element's screen rect for anchoring popovers. */
+export function anchorOf(el: Element | null): Anchor | null {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, right: r.right, bottom: r.bottom };
+}
+
 export interface MenuItem {
   label?: string;
   icon?: string;
@@ -52,6 +66,8 @@ interface State {
   view: View;
   selectedId: string | null;
   detailId: string | null;
+  /** Screen rect of the row or block the detail popover opened from. */
+  detailAnchor: Anchor | null;
   eventEditor: { event: CalEvent; isNew: boolean } | null;
   commandOpen: boolean;
   quickAdd: { open: boolean; defaults?: Partial<Task> };
@@ -76,7 +92,7 @@ interface State {
   load: (opts?: { seed?: boolean }) => Promise<void>;
   setView: (v: View) => void;
   select: (id: string | null) => void;
-  openDetail: (id: string | null) => void;
+  openDetail: (id: string | null, anchor?: Anchor | null) => void;
   set: (patch: Partial<State>) => void;
 
   createTask: (t: Partial<Task>) => Task;
@@ -154,6 +170,7 @@ export const useStore = create<State>((set, get) => {
     view: { kind: "today" },
     selectedId: null,
     detailId: null,
+    detailAnchor: null,
     eventEditor: null,
     commandOpen: false,
     quickAdd: { open: false },
@@ -187,7 +204,7 @@ export const useStore = create<State>((set, get) => {
 
     setView: (view) => set({ view, selectedId: null }),
     select: (selectedId) => set({ selectedId }),
-    openDetail: (detailId) => set({ detailId, selectedId: detailId ?? get().selectedId }),
+    openDetail: (detailId, anchor = null) => set({ detailId, detailAnchor: anchor, selectedId: detailId ?? get().selectedId }),
     set: (patch) => set(patch),
 
     createTask: (partial) => {

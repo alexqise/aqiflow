@@ -3,7 +3,7 @@ import { memo, useState } from "react";
 import { taskMenu } from "../actions";
 import { diffDays, formatDuration, formatTime, relativeDay, todayStr } from "../dates";
 import { droppedTaskId, endTaskDrag, isTaskDrag, startTaskDrag } from "../dnd";
-import { useStore } from "../store";
+import { anchorOf, useStore } from "../store";
 import type { Task } from "../types";
 import { Checkbox, PriorityFlag } from "./common";
 
@@ -65,8 +65,7 @@ export const TaskRow = memo(function TaskRow({ task, showDate = true, showProjec
           onDropBefore(id, task);
         }
       }}
-      onClick={() => (onClick ? onClick(task) : useStore.getState().select(task.id))}
-      onDoubleClick={() => useStore.getState().openDetail(task.id)}
+      onClick={(e) => (onClick ? onClick(task) : useStore.getState().openDetail(task.id, anchorOf(e.currentTarget)))}
       onContextMenu={(e) => {
         e.preventDefault();
         const s = useStore.getState();

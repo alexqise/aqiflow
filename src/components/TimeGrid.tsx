@@ -13,7 +13,7 @@ import {
 } from "../dates";
 import { droppedTaskId, isTaskDrag, drag as dragState } from "../dnd";
 import { plannedMinutes } from "../selectors";
-import { PALETTE, uid, useStore } from "../store";
+import { anchorOf, PALETTE, uid, useStore } from "../store";
 import type { CalEvent, Task } from "../types";
 import { Checkbox } from "./common";
 import { RatingBadge } from "./DayRater";
@@ -207,7 +207,7 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
     }
     const { item } = cur;
     if (!cur.moved) {
-      if (item.kind === "task") s.openDetail(item.id);
+      if (item.kind === "task") s.openDetail(item.id, anchorOf(document.querySelector(`[data-cal-task="${item.id}"]`)));
       else s.set({ eventEditor: { isNew: false, event: item.event! } });
       return;
     }
@@ -434,6 +434,7 @@ function CalItem({
   const t = item.task!;
   return (
     <div
+      data-cal-task={t.id}
       className={`cal-item task ${short ? "short" : ""} ${t.done ? "done" : ""} ${dragging ? "dragging" : ""} ${selected ? "selected" : ""}`}
       style={style}
       onPointerDown={(ev) => onPointerDown(ev, false)}
@@ -498,7 +499,7 @@ function AllDayCol({ day, evs, ts }: { day: string; evs: CalEvent[]; ts: Task[] 
               dragState.taskId = (it as { t: Task }).t.id;
             }}
             style={{ background: "var(--bg-hover)", color: "var(--text-2)" }}
-            onClick={() => useStore.getState().openDetail((it as { t: Task }).t.id)}
+            onClick={(e) => useStore.getState().openDetail((it as { t: Task }).t.id, anchorOf(e.currentTarget))}
           >
             ○ {(it as { t: Task }).t.title}
           </div>

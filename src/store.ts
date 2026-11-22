@@ -19,6 +19,9 @@ export const DEFAULT_SETTINGS: Settings = {
   quickShortcut: "CommandOrControl+Shift+Space",
   showCompletedToday: "1",
   dailyGoalHours: "6",
+  calDays: "3",
+  calWeekends: "1",
+  calShowDone: "1",
 };
 
 export const uid = () =>
@@ -42,6 +45,12 @@ export function anchorOf(el: Element | null): Anchor | null {
 
 export interface MenuItem {
   label?: string;
+  /** Renders a switch in this state; the menu stays open when it's flipped. */
+  toggle?: boolean;
+  /** Muted text before the shortcut, e.g. the current value of a submenu. */
+  value?: string;
+  /** Shows a chevron; selecting it usually opens another menu. */
+  submenu?: boolean;
   icon?: string;
   shortcut?: string;
   danger?: boolean;

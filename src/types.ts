@@ -75,4 +75,4 @@ export type View =
   | { kind: "project"; id: string }
   | { kind: "tag"; id: string };
 
-export type CalendarMode = "day" | "3day" | "week";
+export type CalendarMode = "day" | "3day" | "week" | "month";

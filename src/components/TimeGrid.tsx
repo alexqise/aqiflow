@@ -88,6 +88,7 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
   const workStart = Number(settings.workStart ?? 9);
   const workEnd = Number(settings.workEnd ?? 18);
   const goal = (Number(settings.dailyGoalHours) || 6) * 60;
+  const showDone = settings.calShowDone !== "0";
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const colRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -127,14 +128,14 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
         raw.push({ key: "e" + e.id, kind: "event", id: e.id, day, start: s, end: Math.max(en, s + 15), event: e });
       }
       for (const t of tasks) {
-        if (!t.start || t.start.slice(0, 10) !== day) continue;
+        if (!t.start || t.start.slice(0, 10) !== day || (t.done && !showDone)) continue;
         const s = minutesOfDay(t.start);
         raw.push({ key: "t" + t.id, kind: "task", id: t.id, day, start: s, end: Math.min(24 * 60, s + Math.max(15, t.duration || 30)), task: t });
       }
       map.set(day, layoutDay(raw));
     }
     return map;
-  }, [days.join(), tasks, events]);
+  }, [days.join(), tasks, events, showDone]);
 
   const minuteAt = (clientY: number, colIdx: number) => {
     const el = colRefs.current[colIdx];

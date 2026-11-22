@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "../store";
 import { Keys } from "./common";
@@ -37,7 +37,7 @@ export function ContextMenu() {
       if (e.key === "Enter") {
         setActive((a) => {
           if (a >= 0) {
-            close();
+            if (items[a].toggle === undefined) close();
             items[a].onSelect?.();
           }
           return a;
@@ -66,13 +66,15 @@ export function ContextMenu() {
             className={`menu-item ${it.danger ? "danger" : ""} ${i === active ? "active" : ""}`}
             onMouseEnter={() => setActive(i)}
             onClick={() => {
-              close();
+              if (it.toggle === undefined) close();
               it.onSelect?.();
             }}
           >
-            <MenuIcon name={it.icon} />
+            {it.toggle !== undefined ? <span className={`switch ${it.toggle ? "on" : ""}`} /> : it.icon && <MenuIcon name={it.icon} />}
             <span className="label">{it.label}</span>
+            {it.value && <span className="menu-value">{it.value}</span>}
             {it.shortcut && <kbd>{it.shortcut}</kbd>}
+            {it.submenu && <ChevronRight size={14} />}
           </button>
         ),
       )}
@@ -152,7 +154,7 @@ const SHORTCUTS: [string, [string, string][]][] = [
     [
       ["Previous / next", "[ ]"],
       ["Go to today", "."],
-      ["Day / 3-day / week", "D W"],
+      ["1 day / multiple days / week / month", "1 3 W M"],
     ],
   ],
 ];

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { stepDate } from "./calendar";
 import { scheduleFor, taskMenu } from "./actions";
 import { api, onDataChanged } from "./api";
 import { CalendarPanel } from "./components/CalendarViews";
@@ -124,11 +125,11 @@ function useKeyboard() {
       }
 
       if (!s.planningOpen && !sel) {
-        const step = s.calMode === "day" ? 1 : s.calMode === "3day" ? 3 : 7;
-        if (e.key === "[") return s.set({ calDate: addDays(s.calDate, -step) });
-        if (e.key === "]") return s.set({ calDate: addDays(s.calDate, step) });
+        if (e.key === "[") return s.set({ calDate: stepDate(s.calDate, s.calMode, s.settings, -1) });
+        if (e.key === "]") return s.set({ calDate: stepDate(s.calDate, s.calMode, s.settings, 1) });
         if (e.key === ".") return s.set({ calDate: todayStr() });
-        if (k === "d") return s.set({ calMode: "day" });
+        if (k === "d" || k === "1") return s.set({ calMode: "day" });
+        if (k === "m") return s.set({ calMode: "month" });
         if (k === "w") return s.set({ calMode: "week" });
         if (k === "3") return s.set({ calMode: "3day" });
       }

@@ -1,7 +1,7 @@
-import { AlignLeft, CalendarClock, Clock, ListChecks, Repeat } from "lucide-react";
+import { AlignLeft, ListChecks, Repeat } from "lucide-react";
 import { memo, useState } from "react";
 import { taskMenu } from "../actions";
-import { formatDuration, formatTime, relativeDay, todayStr } from "../dates";
+import { diffDays, formatDuration, formatTime, relativeDay, todayStr } from "../dates";
 import { droppedTaskId, endTaskDrag, isTaskDrag, startTaskDrag } from "../dnd";
 import { useStore } from "../store";
 import type { Task } from "../types";
@@ -34,9 +34,6 @@ export const TaskRow = memo(function TaskRow({ task, showDate = true, showProjec
       ? null
       : relativeDay(task.date)
     : null;
-
-  const hasMeta =
-    (showDate && dateLabel) || task.recurrence || task.notes || task.subtasks.length || (showProject && project) || tags.length;
 
   return (
     <div
@@ -79,59 +76,27 @@ export const TaskRow = memo(function TaskRow({ task, showDate = true, showProjec
     >
       <Checkbox task={task} onToggle={() => useStore.getState().toggleDone(task.id)} />
       <div className="task-main">
-        <div className="task-title">{task.title || <span style={{ color: "var(--text-4)" }}>Untitled task</span>}</div>
-        {!compact && hasMeta ? (
-          <div className="task-meta">
-            {showDate && dateLabel && (
-              <span className={`meta ${overdue ? "overdue" : task.date === today ? "today" : ""}`}>
-                <CalendarClock size={12} />
-                {dateLabel}
-                {task.start ? ` · ${formatTime(task.start, true)}` : ""}
-              </span>
-            )}
-            {task.recurrence && (
-              <span className="meta">
-                <Repeat size={12} />
-              </span>
-            )}
+        <span className="task-title">{task.title || <span style={{ color: "var(--text-4)" }}>Untitled task</span>}</span>
+        {!compact && (
+          <span className="task-icons">
+            {task.recurrence && <Repeat size={12} />}
+            {task.notes && <AlignLeft size={12} />}
             {task.subtasks.length > 0 && (
-              <span className="meta">
+              <span className="sub-count">
                 <ListChecks size={12} />
                 {subDone}/{task.subtasks.length}
               </span>
             )}
-            {task.notes && (
-              <span className="meta">
-                <AlignLeft size={12} />
-              </span>
-            )}
-            {showProject && project && (
-              <span className="meta">
-                <span className="nav-dot" style={{ background: project.color, width: 8, height: 8, margin: 0 }} />
-                {project.name}
-              </span>
-            )}
-            {tags.map((t) => (
-              <span className="meta" key={t!.id} style={{ color: t!.color }}>
-                #{t!.name}
-              </span>
-            ))}
-          </div>
-        ) : null}
+          </span>
+        )}
       </div>
       <div className="task-right">
         <PriorityFlag priority={task.priority} />
-        {task.start && (
-          <span className="chip time">
-            {formatTime(task.start, true)}
-          </span>
-        )}
-        {task.duration > 0 && (
-          <span className="chip time">
-            <Clock size={11} />
-            {formatDuration(task.duration)}
-          </span>
-        )}
+        {overdue && <span className="chip age">{diffDays(task.date!, today)}d ago</span>}
+        {showDate && !overdue && dateLabel && <span className="chip">{dateLabel}</span>}
+        {task.start && <span className="chip">{formatTime(task.start, true)}</span>}
+        {task.duration > 0 && <span className="chip">{formatDuration(task.duration)}</span>}
+        {showProject && project && <span className="chip-dot" style={{ background: project.color }} title={project.name} />}
       </div>
     </div>
   );

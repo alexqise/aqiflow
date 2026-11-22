@@ -42,6 +42,15 @@ type Interaction =
   | { mode: "move"; item: Item; grabOffset: number; day: string; start: number; end: number; moved: boolean; x0: number; y0: number }
   | { mode: "resize"; item: Item; day: string; start: number; end: number; moved: boolean };
 
+/** Short time-zone name for the grid's corner, e.g. "PST". */
+function tzLabel() {
+  try {
+    return new Intl.DateTimeFormat("en-US", { timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function layoutDay(items: Omit<Item, "col" | "cols">[]): Item[] {
   const sorted = [...items].sort((a, b) => a.start - b.start || b.end - a.end);
   const out: Item[] = [];
@@ -75,7 +84,7 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
   const projects = useStore((s) => s.projects);
   const settings = useStore((s) => s.settings);
   const selectedId = useStore((s) => s.selectedId);
-  const hh = Number(settings.hourHeight) || 56;
+  const hh = Number(settings.hourHeight) || 96;
   const workStart = Number(settings.workStart ?? 9);
   const workEnd = Number(settings.workEnd ?? 18);
   const goal = (Number(settings.dailyGoalHours) || 6) * 60;
@@ -226,34 +235,34 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
 
   return (
     <div className="cal">
-      {days.length > 1 && (
-        <div className="cal-days">
-          {days.map((d) => {
-            const load = plannedMinutes(tasks, d);
-            return (
-              <div key={d} className={`cal-day-head ${d === today ? "today" : ""}`}>
-                {weekdayName(d, true)}
-                <span className="num">{parseLocal(d).getDate()}</span>
-                <RatingBadge date={d} />
-                <span className="load" title={`${formatDuration(load) || "0m"} planned`}>
-                  <i className={load > goal ? "over" : ""} style={{ width: `${Math.min(100, (load / goal) * 100)}%` }} />
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {(showAllDay || days.length > 1) && (
-        <div className="cal-allday">
-          <div className="gutter">all-day</div>
-          {days.map((d) => (
-            <AllDayCol key={d} day={d} {...allDayFor(d)} />
-          ))}
-        </div>
-      )}
+      <div className="cal-days">
+        <div className="cal-tz">{tzLabel()}</div>
+        {days.map((d) => {
+          const load = plannedMinutes(tasks, d);
+          return (
+            <div key={d} className={`cal-day-head ${d === today ? "today" : ""}`} title={`${formatDuration(load) || "0m"} planned`}>
+              <span className="dow">{weekdayName(d, true)}</span>
+              <span className="num">{parseLocal(d).getDate()}</span>
+              <RatingBadge date={d} />
+              {load > goal && <span className="over-dot" title="Over your daily capacity" />}
+            </div>
+          );
+        })}
+      </div>
+      <div className="cal-allday">
+        <div className="gutter" />
+        {days.map((d) => (
+          <AllDayCol key={d} day={d} {...allDayFor(d)} />
+        ))}
+      </div>
       <div className="cal-scroll" ref={scrollRef}>
         <div className="cal-grid" style={{ height: hh * 24 }}>
           <div className="cal-gutter">
+            {days.includes(today) && (
+              <div className="now-label" style={{ top: (nowMin / 60) * hh }}>
+                {formatTime(nowMin)}
+              </div>
+            )}
             {hours.map((h) =>
               h === 0 ? null : (
                 <div key={h} className="hour" style={{ top: h * hh }}>
@@ -299,7 +308,6 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
                 {hours.map((h) => (
                   <div key={h}>
                     {h > 0 && <div className="hline" style={{ top: h * hh }} />}
-                    {hh >= 48 && <div className="hline half" style={{ top: h * hh + hh / 2 }} />}
                   </div>
                 ))}
                 {items.map((it) => {
@@ -353,7 +361,7 @@ export function TimeGrid({ days, compact }: { days: string[]; compact?: boolean 
                     {formatTime(dropPreview.start, true)}
                   </div>
                 )}
-                {day === today && <div className="now-line" style={{ top: (nowMin / 60) * hh }} />}
+                {days.includes(today) && <div className={`now-line ${day === today ? "" : "dim"}`} style={{ top: (nowMin / 60) * hh }} />}
               </div>
             );
           })}

@@ -24,7 +24,9 @@ export function FocusMode() {
   const remaining = target - elapsed;
   const paused = focus.pausedAt !== null;
 
-  const exit = () => s.set({ focus: null });
+  // Closing minimizes to the title-bar pill; Stop ends the session.
+  const exit = () => s.set({ focusOpen: false });
+  const stop = () => s.set({ focus: null, focusOpen: false });
   const togglePause = () =>
     s.set({
       focus: paused
@@ -40,7 +42,7 @@ export function FocusMode() {
     s.toggleDone(task.id);
     const n = nextTask();
     if (n) s.startFocus(n.id);
-    else exit();
+    else stop();
   };
 
   return (
@@ -55,7 +57,7 @@ export function FocusMode() {
         if (e.key === "e" || (e.metaKey && e.key === "Enter")) complete();
       }}
     >
-      <button className="icon-btn close" onClick={exit} title="Exit focus (esc)">
+      <button className="icon-btn close" onClick={exit} title="Minimize to title bar (esc)">
         <X size={18} />
       </button>
       <div className="label">{paused ? "Paused" : "Focusing on"}</div>
@@ -93,6 +95,9 @@ export function FocusMode() {
           title="Skip to the next task for today"
         >
           <SkipForward size={15} /> Skip
+        </button>
+        <button className="btn ghost" onClick={stop} title="End this focus session">
+          Stop
         </button>
       </div>
       {task.notes && <div className="notes">{task.notes}</div>}

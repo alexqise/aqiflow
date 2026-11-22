@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   workEnd: "18",
   defaultDuration: "30",
   clock24: "0",
-  hourHeight: "56",
+  hourHeight: "96",
   quickShortcut: "CommandOrControl+Shift+Space",
   showCompletedToday: "1",
   dailyGoalHours: "6",
@@ -57,9 +57,13 @@ interface State {
   quickAdd: { open: boolean; defaults?: Partial<Task> };
   planningOpen: boolean;
   focus: { taskId: string; startedAt: number; pausedAt: number | null; elapsedBefore: number } | null;
+  /** Full-screen focus view shown (the timer keeps running in the title bar when closed). */
+  focusOpen: boolean;
   settingsOpen: boolean;
   shortcutsOpen: boolean;
   rightPanel: boolean;
+  /** Task list panel collapsed (calendar takes the full width). */
+  listHidden: boolean;
   calDate: string;
   calMode: CalendarMode;
   panelDate: string;
@@ -153,11 +157,13 @@ export const useStore = create<State>((set, get) => {
     quickAdd: { open: false },
     planningOpen: false,
     focus: null,
+    focusOpen: false,
     settingsOpen: false,
     shortcutsOpen: false,
     rightPanel: true,
+    listHidden: false,
     calDate: todayStr(),
-    calMode: "week",
+    calMode: "3day",
     panelDate: todayStr(),
     toast: null,
     menu: null,
@@ -325,7 +331,7 @@ export const useStore = create<State>((set, get) => {
 
     openMenu: (x, y, items) => set({ menu: { x, y, items } }),
 
-    startFocus: (taskId) => set({ focus: { taskId, startedAt: Date.now(), pausedAt: null, elapsedBefore: 0 } }),
+    startFocus: (taskId) => set({ focus: { taskId, startedAt: Date.now(), pausedAt: null, elapsedBefore: 0 }, focusOpen: true }),
   };
 });
 

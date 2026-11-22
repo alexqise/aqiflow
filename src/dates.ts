@@ -93,9 +93,9 @@ export function formatTime(dt: string | number, compact = false): string {
 
 export function formatHourLabel(h: number): string {
   if (use24h) return `${pad(h)}:00`;
-  if (h === 0) return "12 AM";
-  if (h === 12) return "12 PM";
-  return h < 12 ? `${h} AM` : `${h - 12} PM`;
+  if (h === 0) return "12 am";
+  if (h === 12) return "12 pm";
+  return h < 12 ? `${h} am` : `${h - 12} pm`;
 }
 
 export function formatDuration(minutes: number): string {
@@ -148,4 +148,14 @@ export function monthGrid(year: number, month: number, weekStartsOn: number): st
   const first = toDateStr(new Date(year, month, 1));
   const start = startOfWeek(first, weekStartsOn);
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
+}
+
+/** ISO-8601 week number (1–53). */
+export function isoWeek(date: string): number {
+  const d = parseLocal(date);
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

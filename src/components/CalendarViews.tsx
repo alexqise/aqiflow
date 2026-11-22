@@ -1,47 +1,9 @@
-import { ChevronLeft, ChevronRight, PanelRightClose, Plus } from "lucide-react";
-import { addDays, longDate, monthName, parseLocal, relativeDay, startOfWeek, todayStr } from "../dates";
-import { inboxTasks, sortTasks } from "../selectors";
+import type React from "react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from "lucide-react";
+import { addDays, isoWeek, monthName, parseLocal, startOfWeek, todayStr } from "../dates";
 import { PALETTE, uid, useStore } from "../store";
 import type { CalendarMode } from "../types";
-import { DayRater } from "./DayRater";
-import { TaskRow } from "./TaskRow";
 import { TimeGrid } from "./TimeGrid";
-
-/** The day calendar docked to the right of the task list. */
-export function RightPanel() {
-  const date = useStore((s) => s.panelDate);
-  const set = useStore((s) => s.set);
-  const today = todayStr();
-  return (
-    <div className="right-panel">
-      <div className="panel-head drag" data-tauri-drag-region>
-        <span className="title" data-tauri-drag-region>
-          {relativeDay(date)}
-        </span>
-        <span className="sub" data-tauri-drag-region>
-          {date === today || relativeDay(date).length > 7 ? longDate(date).split(", ")[1] : longDate(date)}
-        </span>
-        <div className="grow" data-tauri-drag-region />
-        <DayRater date={date} compact />
-        {date !== today && (
-          <button className="btn ghost" style={{ height: 26, padding: "0 8px" }} onClick={() => set({ panelDate: today })}>
-            Today
-          </button>
-        )}
-        <button className="icon-btn" onClick={() => set({ panelDate: addDays(date, -1) })} title="Previous day">
-          <ChevronLeft size={16} />
-        </button>
-        <button className="icon-btn" onClick={() => set({ panelDate: addDays(date, 1) })} title="Next day">
-          <ChevronRight size={16} />
-        </button>
-        <button className="icon-btn" onClick={() => set({ rightPanel: false })} title="Hide calendar (⌘\)">
-          <PanelRightClose size={16} />
-        </button>
-      </div>
-      <TimeGrid days={[date]} compact />
-    </div>
-  );
-}
 
 function calendarDays(date: string, mode: CalendarMode, weekStartsOn: number) {
   if (mode === "day") return [date];
@@ -50,40 +12,46 @@ function calendarDays(date: string, mode: CalendarMode, weekStartsOn: number) {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
-/** Full-width calendar with an unscheduled-task tray to drag from. */
-export function CalendarView() {
+const MODE_LABEL: Record<CalendarMode, string> = { day: "Day", "3day": "3 Days", week: "Week" };
+
+/** The main calendar panel beside the task list. */
+export function CalendarPanel() {
   const date = useStore((s) => s.calDate);
   const mode = useStore((s) => s.calMode);
+  const listHidden = useStore((s) => s.listHidden);
   const weekStartsOn = useStore((s) => Number(s.settings.weekStartsOn ?? 1));
-  const tasks = useStore((s) => s.tasks);
   const set = useStore((s) => s.set);
   const days = calendarDays(date, mode, weekStartsOn);
   const step = mode === "day" ? 1 : mode === "3day" ? 3 : 7;
   const first = parseLocal(days[0]);
-  const last = parseLocal(days[days.length - 1]);
-  const title =
-    first.getMonth() === last.getMonth()
-      ? `${monthName(first.getMonth())} ${first.getFullYear()}`
-      : `${monthName(first.getMonth(), true)} – ${monthName(last.getMonth(), true)} ${last.getFullYear()}`;
-
   const today = todayStr();
-  const todayUnscheduled = sortTasks(tasks.filter((t) => !t.done && !t.start && t.date && t.date <= today));
-  const inbox = sortTasks(inboxTasks(tasks));
+
+  const pickMode = (e: React.MouseEvent) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const s = useStore.getState();
+    s.openMenu(r.left, r.bottom + 6, [
+      ...(["day", "3day", "week"] as CalendarMode[]).map((m) => ({
+        label: MODE_LABEL[m],
+        icon: m === mode ? "check" : undefined,
+        shortcut: m === "day" ? "D" : m === "week" ? "W" : "3",
+        onSelect: () => s.set({ calMode: m }),
+      })),
+    ]);
+  };
 
   return (
-    <div className="main">
-      <div className="main-header drag" data-tauri-drag-region>
-        <h1 data-tauri-drag-region>{title}</h1>
+    <section className="panel cal-panel">
+      <header className="panel-header" data-tauri-drag-region>
+        <button className="icon-btn" onClick={() => set({ listHidden: !listHidden })} title={listHidden ? "Show task list" : "Hide task list"}>
+          {listHidden ? <ChevronsRight size={17} /> : <ChevronsLeft size={17} />}
+        </button>
+        <h2 className="panel-title" data-tauri-drag-region>
+          {monthName(first.getMonth(), true)} {first.getFullYear()}
+        </h2>
+        <span className="week-chip">W{isoWeek(days[0])}</span>
         <div className="grow" data-tauri-drag-region />
-        <div className="seg">
-          {(["day", "3day", "week"] as CalendarMode[]).map((m) => (
-            <button key={m} className={mode === m ? "on" : ""} onClick={() => set({ calMode: m })}>
-              {m === "day" ? "Day" : m === "3day" ? "3 days" : "Week"}
-            </button>
-          ))}
-        </div>
-        <button className="btn" onClick={() => set({ calDate: today })}>
-          Today
+        <button className="icon-btn text" onClick={() => set({ calDate: today })} title="Go to today (.)">
+          T
         </button>
         <button className="icon-btn" onClick={() => set({ calDate: addDays(date, -step) })} title="Previous ([)">
           <ChevronLeft size={17} />
@@ -92,7 +60,8 @@ export function CalendarView() {
           <ChevronRight size={17} />
         </button>
         <button
-          className="btn primary"
+          className="icon-btn"
+          title="New event"
           onClick={() => {
             const d = days.includes(today) ? today : days[0];
             const h = Math.min(22, new Date().getHours() + 1);
@@ -104,26 +73,13 @@ export function CalendarView() {
             });
           }}
         >
-          <Plus size={14} /> Event
+          <Plus size={17} />
         </button>
-      </div>
-      <div className="cal-view">
-        <div className="cal-tray">
-          <div className="list-scroll">
-            <div className="tray-head">Today · to schedule</div>
-            {todayUnscheduled.map((t) => (
-              <TaskRow key={t.id} task={t} compact showDate={false} />
-            ))}
-            {!todayUnscheduled.length && <div className="hint" style={{ padding: "6px 14px 10px" }}>All of today's tasks are on the calendar.</div>}
-            <div className="tray-head" style={{ marginTop: 10 }}>Inbox</div>
-            {inbox.map((t) => (
-              <TaskRow key={t.id} task={t} compact />
-            ))}
-            {!inbox.length && <div className="hint" style={{ padding: "6px 14px" }}>Inbox is empty.</div>}
-          </div>
-        </div>
-        <TimeGrid days={days} />
-      </div>
-    </div>
+        <button className="mode-btn" onClick={pickMode} title="Change calendar view">
+          {MODE_LABEL[mode]}
+        </button>
+      </header>
+      <TimeGrid days={days} />
+    </section>
   );
 }

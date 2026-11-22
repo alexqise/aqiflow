@@ -5,6 +5,7 @@ import { App } from "./App";
 import { useTheme } from "./theme";
 import { QuickWindow } from "./components/QuickAdd";
 import { useStore } from "./store";
+import "@fontsource-variable/inter";
 import "./styles.css";
 
 function QuickRoot() {

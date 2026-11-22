@@ -71,6 +71,7 @@ export type View =
   | { kind: "done" }
   | { kind: "calendar" }
   | { kind: "ratings" }
+  | { kind: "tasks" }
   | { kind: "project"; id: string }
   | { kind: "tag"; id: string };
 

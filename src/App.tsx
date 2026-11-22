@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { scheduleFor, taskMenu } from "./actions";
 import { api, onDataChanged } from "./api";
-import { CalendarView, RightPanel } from "./components/CalendarViews";
+import { CalendarPanel } from "./components/CalendarViews";
 import { CommandBar } from "./components/CommandBar";
 import { DatePickerPopover } from "./components/DatePicker";
 import { EventEditor } from "./components/EventEditor";
@@ -13,7 +13,7 @@ import { RatingsView } from "./components/RatingsView";
 import { ContextMenu, ShortcutsHelp, Toast } from "./components/Popups";
 import { QuickAddModal } from "./components/QuickAdd";
 import { SettingsModal } from "./components/Settings";
-import { Sidebar } from "./components/Sidebar";
+import { Rail, TitleBar } from "./components/Shell";
 import { TaskDetail } from "./components/TaskDetail";
 import { addDays, diffMinutes, minutesOfDay, todayStr, toDateTimeStr } from "./dates";
 import { shallow } from "zustand/shallow";
@@ -62,7 +62,7 @@ function useKeyboard() {
         if (s.quickAdd.open) return s.set({ quickAdd: { open: false } });
         if (s.settingsOpen) return s.set({ settingsOpen: false });
         if (s.shortcutsOpen) return s.set({ shortcutsOpen: false });
-        if (s.focus) return s.set({ focus: null });
+        if (s.focus && s.focusOpen) return s.set({ focusOpen: false });
         if (s.planningOpen) return s.set({ planningOpen: false });
         if (s.selectedId) return s.select(null);
         return;
@@ -88,7 +88,7 @@ function useKeyboard() {
       }
       if (mod && e.key === "\\") {
         e.preventDefault();
-        return s.set({ rightPanel: !s.rightPanel });
+        return s.set({ listHidden: !s.listHidden });
       }
       if (mod && e.key === ",") {
         e.preventDefault();
@@ -103,7 +103,7 @@ function useKeyboard() {
         return s.setView(NUMBERED_VIEWS[Number(e.key) - 1]);
       }
 
-      const overlay = s.commandOpen || s.quickAdd.open || s.detailId || s.eventEditor || s.settingsOpen || s.shortcutsOpen || s.focus || s.menu || s.datePicker;
+      const overlay = s.commandOpen || s.quickAdd.open || s.detailId || s.eventEditor || s.settingsOpen || s.shortcutsOpen || (s.focus && s.focusOpen) || s.menu || s.datePicker;
       if (overlay) return;
 
       const sel = s.tasks.find((t) => t.id === s.selectedId);
@@ -123,20 +123,21 @@ function useKeyboard() {
         return;
       }
 
-      if (s.view.kind === "calendar" && !s.planningOpen) {
+      if (!s.planningOpen && !sel) {
         const step = s.calMode === "day" ? 1 : s.calMode === "3day" ? 3 : 7;
         if (e.key === "[") return s.set({ calDate: addDays(s.calDate, -step) });
         if (e.key === "]") return s.set({ calDate: addDays(s.calDate, step) });
         if (e.key === ".") return s.set({ calDate: todayStr() });
-        if (k === "d" && !sel) return s.set({ calMode: "day" });
-        if (k === "w" && !sel) return s.set({ calMode: "week" });
+        if (k === "d") return s.set({ calMode: "day" });
+        if (k === "w") return s.set({ calMode: "week" });
+        if (k === "3") return s.set({ calMode: "3day" });
       }
 
       if (k === "g") {
         gPending = Date.now();
         return;
       }
-      if (k === "n") {
+      if (k === "n" || k === "c") {
         e.preventDefault();
         return s.set({ quickAdd: { open: true } });
       }
@@ -243,14 +244,14 @@ function useTrayTitle() {
 export function App() {
   const loaded = useStore((s) => s.loaded);
   const view = useStore((s) => s.view);
-  const rightPanel = useStore((s) => s.rightPanel);
+  const listHidden = useStore((s) => s.listHidden);
   const o = useStore((s) => ({
     command: s.commandOpen,
     quick: s.quickAdd.open,
     detail: !!s.detailId,
     event: !!s.eventEditor,
     planning: s.planningOpen,
-    focus: !!s.focus,
+    focus: !!s.focus && s.focusOpen,
     settings: s.settingsOpen,
     shortcuts: s.shortcutsOpen,
   }), shallow);
@@ -267,14 +268,23 @@ export function App() {
   }, []);
 
   if (!loaded) return null;
-  const showPanel = rightPanel && view.kind !== "calendar" && view.kind !== "ratings";
+  const showList = !listHidden && view.kind !== "calendar";
 
   return (
     <>
-      <div className="app" style={showPanel ? undefined : { gridTemplateColumns: "var(--sidebar-w) minmax(0, 1fr)" }}>
-        <Sidebar />
-        {view.kind === "calendar" ? <CalendarView /> : view.kind === "ratings" ? <RatingsView /> : <ListView />}
-        {showPanel && <RightPanel />}
+      <div className="shell">
+        <TitleBar />
+        <div className="shell-body">
+          <Rail />
+          {view.kind === "ratings" ? (
+            <RatingsView />
+          ) : (
+            <>
+              {showList && <ListView />}
+              <CalendarPanel />
+            </>
+          )}
+        </div>
       </div>
       {o.planning && <PlanningMode />}
       {o.focus && <FocusMode />}

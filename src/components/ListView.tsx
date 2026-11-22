@@ -1,7 +1,7 @@
 import type React from "react";
-import { CheckCircle2, ChevronDown, Inbox, PanelRightClose, PanelRightOpen, Plus, Sparkles, Sun, Archive, CalendarRange, Hash, Folder } from "lucide-react";
+import { CheckCircle2, ChevronDown, CirclePlus, Inbox, SlidersHorizontal, Sun, Archive, CalendarRange, Hash, Folder, LayoutList } from "lucide-react";
 import { useState } from "react";
-import { formatDuration, longDate, todayStr } from "../dates";
+import { formatDuration, todayStr } from "../dates";
 import { droppedTaskId, isTaskDrag } from "../dnd";
 import { defaultsFor, plannedMinutes, sectionsFor, viewTitle, type Section } from "../selectors";
 import { useStore } from "../store";
@@ -16,53 +16,68 @@ export function ListView() {
   const projects = useStore((s) => s.projects);
   const tags = useStore((s) => s.tags);
   const showCompleted = useStore((s) => s.settings.showCompletedToday !== "0");
-  const rightPanel = useStore((s) => s.rightPanel);
-  const sections = sectionsFor(view, tasks, showCompleted);
+  const sections = sectionsFor(view, tasks, showCompleted, projects);
   const total = sections.reduce((n, s) => n + s.tasks.filter((t) => !t.done).length, 0);
   const today = todayStr();
 
-  let sub = "";
-  if (view.kind === "today") sub = longDate(today);
-  else if (total) sub = `${total} task${total === 1 ? "" : "s"}`;
+  const s = useStore.getState;
+
+  // Title dropdown: jump between lists, like a view switcher.
+  const pickView = (e: React.MouseEvent) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const st = s();
+    const go = (v: View) => () => st.setView(v);
+    st.openMenu(r.left, r.bottom + 4, [
+      { label: "Inbox", icon: "inbox", shortcut: "1", onSelect: go({ kind: "inbox" }) },
+      { label: "Today", icon: "today", shortcut: "2", onSelect: go({ kind: "today" }) },
+      { label: "Upcoming", icon: "upcoming", onSelect: go({ kind: "upcoming" }) },
+      { label: "Someday", icon: "someday", onSelect: go({ kind: "someday" }) },
+      { label: "All tasks", icon: "done", onSelect: go({ kind: "tasks" }) },
+      { label: "Done", icon: "check", onSelect: go({ kind: "done" }) },
+      ...(projects.length ? [{ separator: true }] : []),
+      ...projects.map((p) => ({ label: p.name, icon: "project", onSelect: go({ kind: "project", id: p.id }) })),
+      ...(tags.length ? [{ separator: true }] : []),
+      ...tags.map((t) => ({ label: "#" + t.name, icon: "tag", onSelect: go({ kind: "tag", id: t.id }) })),
+    ]);
+  };
+
+  const options = (e: React.MouseEvent) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const st = s();
+    st.openMenu(r.right - 220, r.bottom + 4, [
+      { label: "Plan my day", icon: "plan", shortcut: "⇧⌘P", onSelect: () => st.set({ planningOpen: true }) },
+      {
+        label: showCompleted ? "Hide completed tasks" : "Show completed tasks",
+        icon: "done",
+        onSelect: () => st.setSetting("showCompletedToday", showCompleted ? "0" : "1"),
+      },
+      { label: "Hide task list", icon: "panel", shortcut: "⌘\\", onSelect: () => st.set({ listHidden: true }) },
+    ]);
+  };
 
   const planned = view.kind === "today" ? plannedMinutes(tasks, today) : 0;
   const project = view.kind === "project" ? projects.find((p) => p.id === view.id) : null;
 
   return (
-    <div className="main">
-      <div className="main-header drag" data-tauri-drag-region>
-        {project && <span className="nav-dot" style={{ background: project.color, width: 14, height: 14, borderRadius: 4, margin: 0 }} />}
-        <h1 data-tauri-drag-region>{viewTitle(view, projects, tags)}</h1>
-        <span className="sub" data-tauri-drag-region>
-          {sub}
-        </span>
-        <div className="grow" data-tauri-drag-region />
-        {view.kind === "today" && <DayRater date={today} />}
-        {view.kind === "today" && planned > 0 && (
-          <span className="chip time" title="Estimated time planned for today">
-            {formatDuration(planned)} planned
-          </span>
-        )}
-        {view.kind === "today" && (
-          <button className="btn" onClick={() => useStore.getState().set({ planningOpen: true })}>
-            <Sparkles size={14} color="var(--accent)" />
-            Plan day
-          </button>
-        )}
-        <button
-          className={`icon-btn ${rightPanel ? "active" : ""}`}
-          title="Toggle calendar (⌘\\)"
-          onClick={() => useStore.getState().set({ rightPanel: !rightPanel })}
-        >
-          {rightPanel ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+    <section className="panel task-panel">
+      <header className="panel-header" data-tauri-drag-region>
+        <button className="panel-title-btn" onClick={pickView}>
+          {project && <span className="dot" style={{ background: project.color }} />}
+          <span className="panel-title">{viewTitle(view, projects, tags)}</span>
+          <ChevronDown size={15} />
         </button>
-      </div>
+        <div className="grow" data-tauri-drag-region />
+        {view.kind === "today" && <DayRater date={today} compact />}
+        <button className="icon-btn" title={view.kind === "today" && planned ? `${formatDuration(planned)} planned · options` : "List options"} onClick={options}>
+          <SlidersHorizontal size={16} />
+        </button>
+      </header>
+      {view.kind !== "done" && <InlineAdd view={view} />}
       <div className="list-scroll">
-        {view.kind !== "done" && <InlineAdd view={view} />}
         <Sections sections={sections} view={view} />
-        {total === 0 && sections.every((s) => !s.tasks.length) && <Empty view={view} />}
+        {total === 0 && sections.every((sec) => !sec.tasks.length) && <Empty view={view} />}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -110,13 +125,12 @@ function SectionBlock({ section, view, compact }: { section: Section; view: View
           className={`section-head ${section.tone ?? ""}`}
           onClick={() => section.collapsible && setClosed(!closed)}
         >
-          {section.collapsible && <ChevronDown size={14} className={`chev ${closed ? "closed" : ""}`} />}
-          <span>{section.title}</span>
+          {section.color && <span className="dot" style={{ background: section.color }} />}
+          <span className="section-label">{section.title}</span>
+          {section.tasks.length > 0 && <span className="count-chip">{section.tasks.length}</span>}
           {section.subtitle && section.subtitle !== section.title && <span className="sub">{section.subtitle}</span>}
-          <span className="meta">
-            {section.tasks.length > 0 && section.tone !== "muted" && minutes > 0 && formatDuration(minutes)}
-            {section.tone === "muted" && section.tasks.length}
-          </span>
+          {section.collapsible && <ChevronDown size={13} className={`chev ${closed ? "closed" : ""}`} />}
+          <span className="meta">{section.tasks.length > 0 && section.tone !== "muted" && minutes > 0 && formatDuration(minutes)}</span>
         </div>
       )}
       {!closed && (
@@ -153,15 +167,14 @@ function InlineAdd({ view }: { view: View }) {
   const [open, setOpen] = useState(false);
   if (!open)
     return (
-      <button className="inline-add" style={{ width: "100%" }} onClick={() => setOpen(true)}>
-        <span className="plus">
-          <Plus size={16} />
-        </span>
-        Add task
+      <button className="add-bar" onClick={() => setOpen(true)}>
+        <CirclePlus size={16} />
+        <span className="add-bar-text">Add new task</span>
+        <kbd>C</kbd>
       </button>
     );
   return (
-    <div className="inline-add-box">
+    <div className="add-bar-open">
       <Composer
         autoFocus
         defaults={defaultsFor(view)}
@@ -184,6 +197,7 @@ function Empty({ view }: { view: View }) {
     done: [<CheckCircle2 size={30} />, "No completed tasks yet", "Completed tasks are kept here as your logbook."],
     project: [<Folder size={30} />, "This project is empty", "Add a task above, or type #project in quick add."],
     tag: [<Hash size={30} />, "No tasks with this tag", "Type @tag in quick add to tag a task."],
+    tasks: [<LayoutList size={30} />, "No open tasks", "Everything is done. Add a task above."],
   };
   const [icon, title, body] = content[view.kind] ?? content.inbox;
   return (

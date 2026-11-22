@@ -10,6 +10,8 @@ export interface Section {
   dropPatch?: Partial<Task>;
   collapsible?: boolean;
   tone?: "danger" | "muted";
+  /** Project color shown as a dot before the title. */
+  color?: string;
 }
 
 export const isOverdue = (t: Task, today = todayStr()) => !t.done && !!t.date && t.date < today;
@@ -43,6 +45,8 @@ export function viewTitle(view: View, projects: Project[], tags: Tag[]): string 
       return "Calendar";
     case "ratings":
       return "Day ratings";
+    case "tasks":
+      return "Tasks";
     case "project":
       return projects.find((p) => p.id === view.id)?.name ?? "Project";
     case "tag":
@@ -50,7 +54,7 @@ export function viewTitle(view: View, projects: Project[], tags: Tag[]): string 
   }
 }
 
-export function sectionsFor(view: View, tasks: Task[], showCompletedToday: boolean): Section[] {
+export function sectionsFor(view: View, tasks: Task[], showCompletedToday: boolean, projects: Project[] = []): Section[] {
   const today = todayStr();
   switch (view.kind) {
     case "inbox":
@@ -118,6 +122,21 @@ export function sectionsFor(view: View, tasks: Task[], showCompletedToday: boole
     case "calendar":
     case "ratings":
       return [];
+
+    case "tasks": {
+      const open = tasks.filter((t) => !t.done);
+      return [
+        ...projects.map((p) => ({
+          id: "p-" + p.id,
+          title: p.name,
+          color: p.color,
+          tasks: sortTasks(open.filter((t) => t.projectId === p.id)),
+          dropPatch: { projectId: p.id },
+          collapsible: true,
+        })),
+        { id: "none", title: "No project", tasks: sortTasks(open.filter((t) => !t.projectId)), dropPatch: { projectId: null }, collapsible: true },
+      ].filter((s) => s.tasks.length) as Section[];
+    }
   }
 }
 
@@ -136,6 +155,8 @@ export function countFor(view: View, tasks: Task[]): number {
       return tasks.filter((t) => !t.done && t.projectId === view.id).length;
     case "tag":
       return tasks.filter((t) => !t.done && t.tags.includes(view.id)).length;
+    case "tasks":
+      return tasks.filter((t) => !t.done).length;
     default:
       return 0;
   }

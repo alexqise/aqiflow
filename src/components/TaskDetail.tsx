@@ -44,7 +44,7 @@ export function TaskDetail() {
   };
 
   // ↑/↓ arrows in the toolbar walk through the current list.
-  const siblings = sectionsFor(s.view, s.tasks, true).flatMap((sec) => sec.tasks);
+  const siblings = sectionsFor(s.view, s.tasks, true, s.projects).flatMap((sec) => sec.tasks);
   const idx = siblings.findIndex((t) => t.id === task.id);
   const step = (d: number) => {
     const next = siblings[idx + d];
